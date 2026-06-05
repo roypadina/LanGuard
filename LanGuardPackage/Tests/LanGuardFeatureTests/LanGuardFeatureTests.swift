@@ -93,3 +93,38 @@ private final class Env {
 @Test func login_movedWhileApprovalPending_reRegisters() {
     #expect(LoginItem.decide(status: .requiresApproval, storedPath: "/A", currentPath: "/B") == .reRegisterMoved)
 }
+
+// MARK: - Virtual-adapter detection
+
+@Test func virtual_flagsBridgeVpnVm() {
+    #expect(InterfaceCatalog.isVirtual(bsdName: "bridge0", displayName: "Thunderbolt Bridge"))
+    #expect(InterfaceCatalog.isVirtual(bsdName: "vmnet8", displayName: "vmnet8"))
+    #expect(InterfaceCatalog.isVirtual(bsdName: "utun4", displayName: "utun4"))
+    #expect(InterfaceCatalog.isVirtual(bsdName: "en5", displayName: "Parallels Adapter"))
+    #expect(InterfaceCatalog.isVirtual(bsdName: "vboxnet0", displayName: "VirtualBox Host-Only"))
+}
+
+@Test func virtual_keepsRealAdaptersPhysical() {
+    #expect(!InterfaceCatalog.isVirtual(bsdName: "en8", displayName: "Realtek USB LAN"))
+    #expect(!InterfaceCatalog.isVirtual(bsdName: "en1", displayName: "Thunderbolt 1"))
+    #expect(!InterfaceCatalog.isVirtual(bsdName: "en0", displayName: "Ethernet"))
+}
+
+// MARK: - Settings: virtual opt-in vs physical opt-out
+
+@Test func settings_physicalOptOut_virtualOptIn() {
+    let defaults = UserDefaults(suiteName: "lg-test-\(UUID().uuidString)")!
+    let settings = AppSettings(defaults: defaults)
+    let phys = NetInterface(bsdName: "en8", displayName: "Realtek USB LAN", isWiFi: false, isVirtual: false)
+    let virt = NetInterface(bsdName: "bridge0", displayName: "Thunderbolt Bridge", isWiFi: false, isVirtual: true)
+
+    // Defaults: physical on, virtual off.
+    #expect(settings.wiredEnabled(phys) == true)
+    #expect(settings.wiredEnabled(virt) == false)
+
+    // User can opt a virtual adapter in, and opt a physical one out.
+    settings.setWiredEnabled(virt, true)
+    settings.setWiredEnabled(phys, false)
+    #expect(settings.wiredEnabled(virt) == true)
+    #expect(settings.wiredEnabled(phys) == false)
+}

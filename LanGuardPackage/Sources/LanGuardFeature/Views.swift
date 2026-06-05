@@ -67,16 +67,21 @@ public struct ConfigView: View {
                     .foregroundStyle(LoginItem.status == .requiresApproval ? Color.orange : .secondary)
             }
 
+            Toggle("Show notifications when Wi-Fi toggles", isOn: Binding(
+                get: { model.settings.notificationsEnabled },
+                set: { model.settings.notificationsEnabled = $0 }
+            ))
+
             Divider()
 
             section(
                 title: "Wired triggers",
-                subtitle: "Wi-Fi turns off when any checked wired link is active.",
+                subtitle: "Wi-Fi turns off when any checked wired link is active. Virtual adapters (bridge/VPN/VM) are off by default.",
                 interfaces: wired,
-                isActive: { model.linkActive($0) },
+                isActive: { model.linkActive($0.bsdName) },
                 isOn: { model.settings.wiredEnabled($0) },
-                set: { bsd, on in
-                    model.settings.setWiredEnabled(bsd, on)
+                set: { iface, on in
+                    model.settings.setWiredEnabled(iface, on)
                     model.selectionChanged()
                 }
             )
@@ -87,16 +92,16 @@ public struct ConfigView: View {
                 title: "Controlled Wi-Fi",
                 subtitle: "These adapters get switched on/off.",
                 interfaces: wifi,
-                isActive: { model.wifiPoweredOn($0) },
-                isOn: { model.settings.wifiEnabled($0) },
-                set: { bsd, on in
-                    model.settings.setWiFiEnabled(bsd, on)
+                isActive: { model.wifiPoweredOn($0.bsdName) },
+                isOn: { model.settings.wifiEnabled($0.bsdName) },
+                set: { iface, on in
+                    model.settings.setWiFiEnabled(iface.bsdName, on)
                     model.selectionChanged()
                 }
             )
         }
         .padding(20)
-        .frame(width: 420)
+        .frame(width: 440)
         .id(tick) // force status-dot refresh
         .onReceive(refresh) { _ in tick &+= 1 }
         .onAppear { loginOn = LoginItem.isEnabled }
@@ -107,9 +112,9 @@ public struct ConfigView: View {
         title: String,
         subtitle: String,
         interfaces: [NetInterface],
-        isActive: @escaping (String) -> Bool,
-        isOn: @escaping (String) -> Bool,
-        set: @escaping (String, Bool) -> Void
+        isActive: @escaping (NetInterface) -> Bool,
+        isOn: @escaping (NetInterface) -> Bool,
+        set: @escaping (NetInterface, Bool) -> Void
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title).font(.headline)
@@ -120,14 +125,21 @@ public struct ConfigView: View {
             } else {
                 ForEach(interfaces) { iface in
                     Toggle(isOn: Binding(
-                        get: { isOn(iface.bsdName) },
-                        set: { set(iface.bsdName, $0) }
+                        get: { isOn(iface) },
+                        set: { set(iface, $0) }
                     )) {
                         HStack(spacing: 8) {
                             Circle()
-                                .fill(isActive(iface.bsdName) ? Color.green : Color.secondary.opacity(0.4))
+                                .fill(isActive(iface) ? Color.green : Color.secondary.opacity(0.4))
                                 .frame(width: 8, height: 8)
                             Text("\(iface.displayName)  (\(iface.bsdName))")
+                            if iface.isVirtual {
+                                Text("virtual")
+                                    .font(.caption2)
+                                    .padding(.horizontal, 5).padding(.vertical, 1)
+                                    .background(Color.secondary.opacity(0.15), in: Capsule())
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }

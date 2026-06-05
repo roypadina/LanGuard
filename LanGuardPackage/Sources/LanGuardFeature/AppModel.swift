@@ -23,8 +23,8 @@ public final class AppModel: ObservableObject {
         let deps = ToggleEngine.Dependencies(
             activeWiredNames: { [monitor] in
                 InterfaceCatalog.wired()
-                    .map(\.bsdName)
                     .filter { settings.wiredEnabled($0) }
+                    .map(\.bsdName)
                     .filter { monitor.linkActive($0) }
             },
             wifiTargets: {
@@ -32,7 +32,20 @@ public final class AppModel: ObservableObject {
                     .map(\.bsdName)
                     .filter { settings.wifiEnabled($0) }
             },
-            setWiFiPower: { on, names in WiFiController.setPower(on, interfaces: names) },
+            setWiFiPower: { on, names in
+                WiFiController.setPower(on, interfaces: names)
+                guard settings.notificationsEnabled else { return }
+                if on {
+                    Notifier.post(title: "Wi-Fi on",
+                                  body: "Wired LAN disconnected — Wi-Fi turned back on.")
+                } else {
+                    let trigger = InterfaceCatalog.wired()
+                        .first { settings.wiredEnabled($0) && monitor.linkActive($0.bsdName) }
+                    let label = trigger?.displayName ?? "Wired LAN"
+                    Notifier.post(title: "Wi-Fi off",
+                                  body: "\(label) connected — Wi-Fi turned off.")
+                }
+            },
             anyWiFiOn: {
                 InterfaceCatalog.wifi()
                     .map(\.bsdName)
@@ -63,6 +76,7 @@ public final class AppModel: ObservableObject {
     /// Called once at launch.
     public func start() {
         LegacyCleanup.run()
+        Notifier.requestAuthorization()
 
         // Auto-register the login item for the current bundle path every launch.
         // Self-heals after a move; prompts the user if macOS needs approval.

@@ -7,14 +7,15 @@ on first launch).
 ## Layout
 - `LanGuard/` — app target (`LanGuardApp.swift`): `MenuBarExtra` + Settings `Window`, `AppDelegate` starts `AppModel`.
 - `LanGuardPackage/Sources/LanGuardFeature/` — all logic (modular, unit-tested):
-  - `InterfaceCatalog` — enumerate + classify Ethernet/Wi-Fi via SystemConfiguration.
+  - `InterfaceCatalog` — enumerate + classify Ethernet/Wi-Fi via SystemConfiguration. `isVirtual(bsdName:displayName:)` flags bridge/VPN/VM/tunnel adapters (pure, tested).
   - `NetworkMonitor` — `SCDynamicStore` callbacks (link/IPv4) + `NSWorkspace.didWakeNotification`; per-interface link reads (SC `kSCPropNetLinkActive`, ifconfig fallback).
   - `WiFiController` — CoreWLAN `setPower` / `powerOn` (no sudo, no shell).
+  - `Notifier` — `UNUserNotificationCenter` wrapper; banners on Wi-Fi toggle (needs OS permission, requested on launch).
   - `ToggleEngine` — **edge-based** decision logic, dependencies injected → testable.
-  - `AppSettings` — UserDefaults; opt-out model for both interface lists.
-  - `LoginItem` / `LegacyCleanup` — SMAppService login item; removes legacy LaunchAgent.
-  - `AppModel` — wires everything; singleton `AppModel.shared`.
-  - `Views` — `MenuContent` (menu), `ConfigView` (settings window).
+  - `AppSettings` — UserDefaults. Physical wired + Wi-Fi = **opt-out** (`disabledWired`/`disabledWiFi`); virtual wired = **opt-in** (`enabledVirtual`, off by default). `notificationsEnabled`.
+  - `LoginItem` / `LegacyCleanup` — SMAppService login item (self-healing, see below); removes legacy LaunchAgent.
+  - `AppModel` — wires everything; singleton `AppModel.shared`. `setWiFiPower` posts the toggle notification.
+  - `Views` — `MenuContent` (menu), `ConfigView` (settings window; virtual adapters get a "virtual" badge).
 - `Config/` — xcconfig + entitlements. **Un-sandboxed** (CoreWLAN power + launchctl), ad-hoc signed, `LSUIElement=YES` (no Dock icon).
 
 ## Core behaviour (edge-based)
@@ -22,7 +23,9 @@ Acts only on wired-link **transitions**: up → Wi-Fi off, down → Wi-Fi on. Be
 never touches Wi-Fi, so a manual Wi-Fi change is respected until the next unplug/replug.
 Last wired state is persisted, so a transition across sleep is seen as an edge on wake.
 First launch with wired up enforces Wi-Fi off once. Master "Auto-toggle" switch disables
-all action. Interface lists are opt-out → new adapters are auto-included.
+all action. Physical adapters are opt-out (new real adapters auto-included); virtual
+adapters (bridge/VPN/VM, e.g. VMware `vmnet`) are opt-in so they can't pin Wi-Fi off.
+A banner notification fires whenever Wi-Fi is actually toggled (if enabled + OS-permitted).
 
 ## Build / test / run
 ```bash
