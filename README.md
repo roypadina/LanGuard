@@ -2,12 +2,12 @@
 
 <img src="docs/social-preview.png" alt="LanGuard — Wi-Fi off when you're wired, back on when you're not. A free, open-source macOS menu-bar app." width="760">
 
-# 🛡️ LanGuard
+# LanGuard
 
 ### Wi-Fi off when you're wired. Back on when you're not.
 
 A tiny native macOS menu-bar app that turns **Wi-Fi off the moment a wired LAN link goes up**,
-and back **on when you unplug** — edge-based, wake-aware, per-interface, no admin rights, no shell scripts.
+and back **on when you unplug** — edge-based, wake-aware, per-interface, and no admin rights required.
 
 [![macOS](https://img.shields.io/badge/macOS-14%2B-000000?logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5-F05138?logo=swift&logoColor=white)](https://swift.org)
@@ -17,8 +17,6 @@ and back **on when you unplug** — edge-based, wake-aware, per-interface, no ad
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?logo=opensourceinitiative&logoColor=white)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?logo=github)](CONTRIBUTING.md)
 [![Stars](https://img.shields.io/github/stars/roypadina/LanGuard?style=social)](https://github.com/roypadina/LanGuard/stargazers)
-
-**⭐ If LanGuard is useful, please [star the repo](https://github.com/roypadina/LanGuard) — it helps others find it.**
 
 </div>
 
@@ -59,7 +57,7 @@ manually flip Wi-Fi back on while docked, it stays on until you next unplug.
 | 🧭 **Configurable indicator** | Menu-bar shows `LAN` / `Wi-Fi` / `Off` — icon only, icon + label, or label only. |
 | ⏸️ **Master switch** | Pause all automatic toggling from the menu. |
 | 🚀 **Start at login** | Self-healing login item — re-registers if the app moves; prompts if macOS needs approval. |
-| 🔐 **No sudo, no shell** | Wi-Fi power via CoreWLAN, link state via SystemConfiguration. No network calls. |
+| 🔐 **No admin, no sudo** | Wi-Fi power via CoreWLAN, link state via SystemConfiguration. No network calls of its own. |
 
 > **Menu-bar indicator** (icon + label style):
 >
@@ -72,12 +70,11 @@ manually flip Wi-Fi back on while docked, it stays on until you next unplug.
 |  | **LanGuard** | BridgeChecker | ToggleWifi |
 |---|:---:|:---:|:---:|
 | Price | **Free** | Paid (~$50) | Free |
-| Open source (MIT) | ✅ | ❌ | ✅ |
+| Open source | ✅ (MIT) | ❌ | ✅ |
 | Per-interface selection | ✅ | ✅ | ❌ |
 | Edge-based (respects manual toggle) | ✅ | — | — |
 | Wake-from-sleep handling | ✅ | — | not documented |
 | No admin / sudo | ✅ | — | ❌ (needs admin) |
-| Native (no Electron) | ✅ | ✅ | ✅ |
 
 <sub>Comparison based on each project's public docs at time of writing; verify current details on their sites. LanGuard is **not** notarized (ad-hoc signed) — see [Is it safe?](#is-it-safe).</sub>
 
@@ -104,7 +101,8 @@ brew install --cask roypadina/tap/languard
 git clone https://github.com/roypadina/LanGuard.git
 cd LanGuard
 xcodebuild -workspace LanGuard.xcworkspace -scheme LanGuard -configuration Release build
-# copy the built LanGuard.app from DerivedData into /Applications, then launch it
+cp -R ~/Library/Developer/Xcode/DerivedData/LanGuard-*/Build/Products/Release/LanGuard.app /Applications/
+open /Applications/LanGuard.app
 ```
 
 The app lives in the menu bar (no Dock icon). On first launch, click **Allow** on the
@@ -147,8 +145,10 @@ full component map.
 Fair question — it toggles your network and launches at login. Here's the honest picture:
 
 - **Open source (MIT).** Every line is in this repo; read or build it yourself.
-- **No network calls of its own. No ads, no analytics, no tracking.** It only talks to the
-  local macOS networking APIs (CoreWLAN, SystemConfiguration).
+- **No network calls of its own. No ads, no analytics, no tracking.** It uses local macOS
+  networking APIs (CoreWLAN, SystemConfiguration). The only external tools it ever runs are
+  read-only `ifconfig` (a link-state fallback) and a one-time `launchctl` to remove the legacy
+  LaunchAgent — never `networksetup`, never with elevated privileges.
 - **No admin / sudo.** It never asks for your password or installs a privileged helper.
 - **Ad-hoc signed, _not_ notarized.** That's the one rough edge: macOS can't verify the
   developer, so the first launch is blocked until you **right-click → Open** (or clear

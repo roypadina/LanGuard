@@ -16,7 +16,7 @@ free, open-source macOS menu-bar utility. Copy blocks are ready to paste.
 - [ ] **Record a demo GIF** (the #1 missing asset). Shot list: app in menu bar (Wi-Fi state) → plug in Ethernet → indicator flips to `LAN` + a "Wi-Fi off" banner → open the menu showing status → unplug → Wi-Fi comes back. ~8–10s, ~1200px wide, <5MB, looping. Tools: **Kap** or QuickTime + Gifski. Put it at the top of the README and reuse on PH/Reddit/socials.
 - [ ] **Add Settings screenshots** (per-interface picker w/ the `virtual` badge, indicator styles) to the README.
 - [ ] **Pre-age accounts** — Product Hunt requires the account be **2+ weeks old**; Reddit subs often need ~100+ karma. Create/warm these now if needed.
-- [ ] **Add a SHA-256** to the v1.0.0 release body so people can verify the download.
+- [x] **SHA-256** is published in the v1.0.0 release body (`4070b8ee…8ddd8e`) so people can verify the download.
 - [ ] **Pin the repo** on your GitHub profile; seed a **Discussions → Announcements** post for v1.0.0.
 
 ---
@@ -63,6 +63,7 @@ Search these, find people who already asked for exactly this, and reply with Lan
 Open one PR per list. Search for duplicates first; keep entries alphabetical; descriptions end with a period.
 
 **iCHAIT/awesome-macOS** → section *Utilities* — https://github.com/iCHAIT/awesome-macOS
+<sub>(The `[OSS Icon]` / `[Freeware Icon]` refs below are defined in that list's README — they render there, not when previewing this file.)</sub>
 ```
 - [LanGuard](https://github.com/roypadina/LanGuard) - Turns Wi-Fi off when a wired Ethernet link is active, back on when unplugged. Edge-based, wake-aware, no admin rights. [![Open-Source Software][OSS Icon]](https://github.com/roypadina/LanGuard) ![Freeware][Freeware Icon]
 ```
@@ -116,7 +117,7 @@ Per-interface config. You pick which wired adapters count as a trigger and which
 
 There's also the usual small stuff: optional toggle notifications, a configurable menu-bar indicator (LAN/Wi-Fi/Off), a master pause switch, and start-at-login via a self-healing login item.
 
-On the technical side: native Swift 5 / SwiftUI using MenuBarExtra. Wi-Fi power goes through CoreWLAN, link state comes from SystemConfiguration (SCDynamicStore callbacks). No sudo, no admin rights, no shelling out to networksetup. It's un-sandboxed (CoreWLAN power + login-item management need it). It makes no network calls of its own, no ads, no tracking. The edge decision logic is dependency-injected and unit-tested.
+On the technical side: native Swift 5 / SwiftUI using MenuBarExtra. Wi-Fi power goes through CoreWLAN, link state comes from SystemConfiguration (SCDynamicStore callbacks), with an ifconfig read as a fallback. No sudo, no admin rights, no privileged helper, and it never uses networksetup. It's un-sandboxed (CoreWLAN power + login-item management need it). It makes no network calls of its own, no ads, no tracking. The edge decision logic is dependency-injected and unit-tested.
 
 Honest limitations:
 - It's brand new. Very few stars, not much real-world mileage yet, so expect rough edges and please file issues.
@@ -125,7 +126,7 @@ Honest limitations:
 
 Install: `brew install --cask roypadina/tap/languard` (my own tap) or build from source. MIT.
 
-Prior art: BridgeChecker (commercial, more enterprise-oriented) and ToggleWifi (open source, but requires admin and has no per-interface selection or documented wake handling). LanGuard's niche is the combination of per-interface control, wake handling, and no admin requirement, for free.
+Prior art: BridgeChecker (commercial, ~$50) and ToggleWifi (open source, but from its public docs it requires admin and doesn't expose per-interface selection or document wake handling — happy to be corrected). LanGuard's niche is the combination of per-interface control, wake handling, and no admin requirement, for free.
 
 Happy to answer questions about the CoreWLAN/SystemConfiguration approach or the edge-triggering logic.
 ```
@@ -146,7 +147,7 @@ How it works:
 - Wake-aware — re-checks and corrects state after sleep.
 - Per-interface config — pick which wired adapters count as a trigger and which Wi-Fi adapter it controls.
 - Ignores virtual/VPN/VM adapters (e.g. VMware vmnet) so they don't falsely trigger it.
-- No sudo, no admin, no shell scripts. Uses CoreWLAN + SystemConfiguration. Native Swift / SwiftUI.
+- No sudo, no admin rights. Uses CoreWLAN + SystemConfiguration. Native Swift / SwiftUI.
 - Optional notifications, configurable indicator (LAN / Wi-Fi / Off), master pause switch, start-at-login.
 - No ads, no tracking, makes no network calls of its own.
 
@@ -154,7 +155,7 @@ Install: `brew install --cask roypadina/tap/languard` (my own tap), or build fro
 Gatekeeper: ad-hoc signed but not notarized yet — first launch is right-click → Open, or `xattr -dr com.apple.quarantine /Applications/LanGuard.app`.
 Status: brand new, very few stars, requires macOS 14 (Sonoma)+. Bug reports and PRs welcome.
 
-Alternatives I knew about: BridgeChecker (commercial, more enterprise-focused) and ToggleWifi (open source, but needs admin, no per-interface selection). LanGuard's niche: per-interface + wake-aware + no-admin + free.
+Alternatives I knew about: BridgeChecker (commercial, ~$50) and ToggleWifi (open source, but from its docs needs admin and has no per-interface selection — happy to be corrected). LanGuard's niche: per-interface + wake-aware + no-admin + free.
 
 Repo (MIT): https://github.com/roypadina/LanGuard
 ```
@@ -170,7 +171,7 @@ If you dock your Mac to wired Ethernet, macOS leaves Wi-Fi on anyway. LanGuard t
 - Edge-based: it only acts on the plug/unplug moment. Turn Wi-Fi back on manually while docked and it leaves that alone until your next unplug.
 - Reconciles state after sleep.
 - You pick which wired adapters trigger it and which Wi-Fi adapters it controls; virtual/VPN/VM adapters are ignored by default.
-- No admin and no shell scripts (CoreWLAN + SystemConfiguration). No network calls, no ads, no tracking.
+- No admin rights (CoreWLAN + SystemConfiguration). No network calls of its own, no ads, no tracking.
 
 Honest: brand new (few stars), ad-hoc signed/not notarized (first launch: right-click → Open, or xattr -dr com.apple.quarantine), macOS 14+.
 
@@ -200,21 +201,21 @@ Feedback on link-state/wake edge cases welcome.
 - **Tagline (≤60):** `Wi-Fi off when you plug in Ethernet, on when you don't`
 - **Description (≤260):**
 ```
-Free, open-source macOS menu-bar app. Turns Wi-Fi off when a wired Ethernet link goes up, back on when you unplug. Edge-based so it respects manual changes, wake-aware, per-interface. No admin, no shell. macOS 14+. MIT.
+Free, open-source macOS menu-bar app. Turns Wi-Fi off when a wired Ethernet link goes up, back on when you unplug. Edge-based so it respects manual changes, wake-aware, per-interface. No admin rights. macOS 14+. MIT.
 ```
 - **First (maker) comment:**
 ```
-I'm the maker. I built LanGuard to stop my docked laptop from quietly staying on Wi-Fi when a wired connection was right there. It only acts on plug/unplug transitions, so if you turn Wi-Fi back on manually it leaves it alone until you next unplug. Native Swift/SwiftUI, talks to CoreWLAN and SystemConfiguration directly — no sudo, no shell scripts. It's brand new, so expect rough edges and please file issues. Heads up: it's ad-hoc signed, not notarized, so first launch needs right-click → Open (or build from source). Free and MIT. Repo: https://github.com/roypadina/LanGuard
+I'm the maker. I built LanGuard to stop my docked laptop from quietly staying on Wi-Fi when a wired connection was right there. It only acts on plug/unplug transitions, so if you turn Wi-Fi back on manually it leaves it alone until you next unplug. Native Swift/SwiftUI, talks to CoreWLAN and SystemConfiguration directly — no sudo, no admin rights. It's brand new, so expect rough edges and please file issues. Heads up: it's ad-hoc signed, not notarized, so first launch needs right-click → Open (or build from source). Free and MIT. Repo: https://github.com/roypadina/LanGuard
 ```
 
 ### X / Twitter — single post
 ```
-Made a tiny free macOS menu-bar app: LanGuard. Plug in Ethernet -> Wi-Fi turns off. Unplug -> Wi-Fi comes back. Edge-based so it respects manual changes, wake-aware, per-interface. No admin, no shell scripts. macOS 14+. MIT, open source. https://github.com/roypadina/LanGuard
+Made a tiny free macOS menu-bar app: LanGuard. Plug in Ethernet -> Wi-Fi turns off. Unplug -> Wi-Fi comes back. Edge-based so it respects manual changes, wake-aware, per-interface. No admin rights. macOS 14+. MIT, open source. https://github.com/roypadina/LanGuard
 ```
 
 ### X / Twitter — 3-post thread
 ```
-1/ I built LanGuard: a small macOS menu-bar app that turns Wi-Fi off when a wired LAN link is active and back on when you unplug. Free, open source (MIT). No admin rights, no shell scripts. macOS 14+ — https://github.com/roypadina/LanGuard
+1/ I built LanGuard: a small macOS menu-bar app that turns Wi-Fi off when a wired LAN link is active and back on when you unplug. Free, open source (MIT). No admin rights needed. macOS 14+ — https://github.com/roypadina/LanGuard
 
 2/ What I tried to get right:
 - Edge-based: acts only on plug/unplug, so a manual Wi-Fi toggle is respected until the next unplug
@@ -229,7 +230,7 @@ No ads, no tracking, no network calls of its own.
 
 ### Mastodon / Bluesky
 ```
-Made a tiny free macOS menu-bar app: LanGuard. Plug in Ethernet -> Wi-Fi turns off. Unplug -> Wi-Fi comes back. Edge-based (respects manual changes), wake-aware, per-interface. No admin, no shell. macOS 14+. Open source (MIT). https://github.com/roypadina/LanGuard #macOS #opensource
+Made a tiny free macOS menu-bar app: LanGuard. Plug in Ethernet -> Wi-Fi turns off. Unplug -> Wi-Fi comes back. Edge-based (respects manual changes), wake-aware, per-interface. No admin rights. macOS 14+. Open source (MIT). https://github.com/roypadina/LanGuard #macOS #opensource
 ```
 (Mastodon: attach a screenshot + add image alt text.)
 
@@ -242,7 +243,7 @@ When you plug into wired Ethernet, it turns Wi-Fi off automatically; when you un
 - Edge-based: acts only on plug/unplug transitions, so a manual Wi-Fi toggle is respected until the next unplug.
 - Wake-aware: re-checks and corrects state after sleep.
 - Per-interface: choose which wired adapters trigger it and which Wi-Fi adapters it controls; virtual/VPN/VM adapters are auto-ignored.
-- No admin, no shell scripts: built on CoreWLAN + SystemConfiguration, native Swift/SwiftUI. No ads, no tracking, no network calls of its own.
+- No admin rights: built on CoreWLAN + SystemConfiguration, native Swift/SwiftUI. No ads, no tracking, no network calls of its own.
 
 Brand-new and ad-hoc signed (not notarized) — first launch needs right-click → Open. macOS 14+.
 
