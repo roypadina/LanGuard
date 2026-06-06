@@ -270,3 +270,33 @@ notarization tradeoff → what's next. Link the repo; cross-post to Hashnode/Med
 4. **Day 3:** **Product Hunt** (12:01am PT, account ≥2 weeks). Post **X / Mastodon / Bluesky / LinkedIn** the same morning.
 5. **Week 2+:** newsletters, AlternativeTo listings, r/swift "how I built it" write-up + dev.to article.
 6. **Ongoing:** at ~75★, PR the cask into **homebrew-cask** so it's `brew install --cask languard` with no tap.
+
+---
+
+## 7. Directory listings (submit forms — your login needed)
+
+These aren't PRs; they're web submit forms. Lasting, SEO-friendly discovery. Do post-launch.
+
+### AlternativeTo — https://alternativeto.net
+List LanGuard, then mark it as an alternative to **BridgeChecker** and **ToggleWifi**.
+- **Name:** `LanGuard`
+- **Short tagline:** `Wi-Fi off when you plug in Ethernet, back on when you unplug`
+- **Description:**
+```
+LanGuard is a free, open-source (MIT) macOS menu-bar app that turns Wi-Fi off when a wired Ethernet link becomes active and back on when you unplug. It's edge-based (acts only on plug/unplug, so manual changes are respected), wake-aware, and per-interface (virtual/VPN/VM adapters are ignored by default). No admin rights, no tracking, no network calls of its own. Native Swift/SwiftUI. macOS 14+.
+```
+- **License:** Open Source / Free · **Platform:** Mac · **Tags:** `menu-bar`, `wifi`, `ethernet`, `networking`, `automation`
+- **Link:** https://github.com/roypadina/LanGuard
+- Mark as alternative to: https://alternativeto.net/software/bridgechecker/ and https://alternativeto.net/software/togglewifi/
+
+### macmenubar.com — https://macmenubar.com (submit a menu-bar app)
+- **Name:** `LanGuard`  ·  **URL:** https://github.com/roypadina/LanGuard  ·  **Price:** Free / Open Source
+- **Category:** Utilities / Networking
+- **Description:**
+```
+Turns Wi-Fi off the moment you plug in Ethernet, and back on when you unplug. Edge-based, wake-aware, per-interface, no admin rights. Free and open source (MIT). macOS 14+.
+```
+
+### Also worth a listing (low effort, your account)
+- **Slant.co** — "Best macOS menu bar apps" / "...network utilities" — add LanGuard as an option.
+- **Saashub / Libhunt (awesome-swift feed)** — auto-pull from awesome lists; the merged awesome-mac entry may surface it automatically.
