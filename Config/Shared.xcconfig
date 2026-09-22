@@ -37,3 +37,5 @@ CODE_SIGN_ENTITLEMENTS = Config/LanGuard.entitlements
 CODE_SIGN_STYLE = Manual
 CODE_SIGN_IDENTITY = -
 DEVELOPMENT_TEAM =
+// App icon (Assets.xcassets/AppIcon.appiconset)
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
