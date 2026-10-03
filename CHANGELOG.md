@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-10-03
+
+### Changed
+- About is now a custom window (nothing clipped); Settings shows a compact About row; Settings captions no longer truncate.
+
 ## [1.0.3] - 2026-10-03
 
 ### Added

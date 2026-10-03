@@ -28,8 +28,7 @@ public struct MenuContent: View {
         Divider()
 
         Button("About LanGuard") {
-            NSApp.activate(ignoringOtherApps: true)
-            NSApp.orderFrontStandardAboutPanel(options: [.credits: AboutInfo.credits])
+            AboutWindow.show()
         }
 
         Button("Support on Ko-fi ☕") { NSWorkspace.shared.open(AboutInfo.koFi) }
@@ -46,15 +45,76 @@ public struct MenuContent: View {
 enum AboutInfo {
     static let koFi = URL(string: "https://ko-fi.com/roypadina")!
     static let github = URL(string: "https://github.com/roypadina/LanGuard")!
-    static let blurb = "I'm a software engineer from Israel who builds small, focused Mac tools to fix the little annoyances in my own day — then shares them free and open source."
-    static let ask = "If this app saves you time, a coffee on Ko-fi keeps the next one coming. ☕"
+    static let issues = URL(string: "https://github.com/roypadina/LanGuard/issues")!
+    static let version = "\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")"
+}
 
-    static var credits: NSAttributedString {
-        let s = NSMutableAttributedString(
-            string: "Made by Roy Padina\n\n\(blurb)\n\n\(ask)\n",
-            attributes: [.font: NSFont.systemFont(ofSize: 11), .foregroundColor: NSColor.labelColor])
-        s.addAttribute(.link, value: koFi, range: (s.string as NSString).range(of: "Ko-fi"))
-        return s
+/// Custom About window (the standard panel's fixed-height credits box clips text).
+@MainActor
+enum AboutWindow {
+    private static var window: NSWindow?
+
+    static func show() {
+        if window == nil {
+            let w = NSWindow(contentViewController: NSHostingController(rootView: AboutView()))
+            w.title = "About LanGuard"
+            w.styleMask = [.titled, .closable]
+            w.isReleasedWhenClosed = false
+            w.center()
+            window = w
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        window?.makeKeyAndOrderFront(nil)
+    }
+}
+
+struct AboutView: View {
+    private let info = Bundle.main.infoDictionary ?? [:]
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .frame(width: 96, height: 96)
+
+            VStack(spacing: 2) {
+                Text("LanGuard").font(.title.bold())
+                Text("Version \(info["CFBundleShortVersionString"] as? String ?? "") (\(info["CFBundleVersion"] as? String ?? ""))")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(spacing: 8) {
+                Text("Made by Roy Padina").font(.headline)
+                Text("I'm a software engineer from Israel who builds small, focused Mac tools to fix the little annoyances in my own day — then shares them free and open source.")
+                Text("If this app saves you time, a coffee on Ko-fi keeps the next one coming. ☕")
+            }
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+
+            HStack {
+                Link(destination: AboutInfo.koFi) {
+                    Text("Support on Ko-fi ☕").frame(minWidth: 140)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+
+                Link(destination: AboutInfo.github) {
+                    Text("GitHub").frame(minWidth: 70)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+            }
+
+            Link("Report an issue", destination: AboutInfo.issues)
+                .font(.callout)
+
+            Text("© Roy Padina · MIT")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(24)
+        .frame(width: 380)
     }
 }
 
@@ -149,6 +209,7 @@ public struct ConfigView: View {
                 ))
                 Text("Writes a log to ~/Library/Logs/LanGuard. Turn this on, reproduce the issue, then send us the log file.")
                     .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 HStack {
                     Button("Reveal Logs in Finder") { Log.revealInFinder() }
                     Button("Clear Logs") { Log.clear() }
@@ -157,23 +218,19 @@ public struct ConfigView: View {
 
             Divider()
 
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 10) {
-                    Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 48, height: 48)
-                    VStack(alignment: .leading) {
-                        Text("About LanGuard").font(.headline)
-                        Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?")")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
+            HStack(spacing: 10) {
+                Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 40, height: 40)
+                VStack(alignment: .leading) {
+                    Text("LanGuard").font(.headline)
+                    Text("Version \(AboutInfo.version)").font(.caption).foregroundStyle(.secondary)
                 }
-                Text("Made by Roy Padina").font(.subheadline.bold())
-                Text(AboutInfo.blurb).font(.caption).foregroundStyle(.secondary)
-                Text(AboutInfo.ask).font(.caption).foregroundStyle(.secondary)
-                HStack {
-                    Button("Support on Ko-fi ☕") { NSWorkspace.shared.open(AboutInfo.koFi) }
-                        .buttonStyle(.borderedProminent)
-                    Button("GitHub") { NSWorkspace.shared.open(AboutInfo.github) }
-                }
+                Spacer()
+            }
+            HStack {
+                Spacer()
+                Button("About LanGuard…") { AboutWindow.show() }
+                Button("Support on Ko-fi ☕") { NSWorkspace.shared.open(AboutInfo.koFi) }
+                    .buttonStyle(.borderedProminent)
             }
         }
         .padding(20)
@@ -195,6 +252,7 @@ public struct ConfigView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title).font(.headline)
             Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
             if interfaces.isEmpty {
                 Text("No interfaces found.").font(.caption).foregroundStyle(.secondary)
