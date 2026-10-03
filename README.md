@@ -17,6 +17,7 @@ and back **on when you unplug** — edge-based, wake-aware, per-interface, and n
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?logo=opensourceinitiative&logoColor=white)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?logo=github)](CONTRIBUTING.md)
 [![Stars](https://img.shields.io/github/stars/roypadina/LanGuard?style=social)](https://github.com/roypadina/LanGuard/stargazers)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-support-F16061?logo=ko-fi&logoColor=white)](https://ko-fi.com/roypadina)
 
 <br>
 
@@ -223,10 +224,12 @@ cd LanGuardPackage && swift test   # pure logic, no hardware needed
 
 ## Support
 
-If LanGuard saves you some battery and annoyance, you can
-[**buy me a coffee on Ko-fi ☕**](https://ko-fi.com/roypadina) — totally optional, always appreciated.
-A **⭐ star** helps just as much.
+If LanGuard keeps your Wi-Fi and wired connection from fighting each other, you can support its development — it's optional and always appreciated.
+
+[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/roypadina)
+
+A ⭐ on the repo helps just as much.
 
 ## License
 
-[MIT](LICENSE) © Roy Padina
+[MIT](LICENSE) © Roy Padina · [Support on Ko-fi ☕](https://ko-fi.com/roypadina)

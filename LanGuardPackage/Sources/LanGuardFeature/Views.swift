@@ -27,8 +27,34 @@ public struct MenuContent: View {
 
         Divider()
 
+        Button("About LanGuard") {
+            NSApp.activate(ignoringOtherApps: true)
+            NSApp.orderFrontStandardAboutPanel(options: [.credits: AboutInfo.credits])
+        }
+
+        Button("Support on Ko-fi ☕") { NSWorkspace.shared.open(AboutInfo.koFi) }
+
+        Divider()
+
         Button("Quit LanGuard") { NSApp.terminate(nil) }
             .keyboardShortcut("q", modifiers: .command)
+    }
+}
+
+// MARK: - About
+
+enum AboutInfo {
+    static let koFi = URL(string: "https://ko-fi.com/roypadina")!
+    static let github = URL(string: "https://github.com/roypadina/LanGuard")!
+    static let blurb = "I'm a software engineer from Israel who builds small, focused Mac tools to fix the little annoyances in my own day — then shares them free and open source."
+    static let ask = "If this app saves you time, a coffee on Ko-fi keeps the next one coming. ☕"
+
+    static var credits: NSAttributedString {
+        let s = NSMutableAttributedString(
+            string: "Made by Roy Padina\n\n\(blurb)\n\n\(ask)\n",
+            attributes: [.font: NSFont.systemFont(ofSize: 11), .foregroundColor: NSColor.labelColor])
+        s.addAttribute(.link, value: koFi, range: (s.string as NSString).range(of: "Ko-fi"))
+        return s
     }
 }
 
@@ -126,6 +152,27 @@ public struct ConfigView: View {
                 HStack {
                     Button("Reveal Logs in Finder") { Log.revealInFinder() }
                     Button("Clear Logs") { Log.clear() }
+                }
+            }
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 10) {
+                    Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 48, height: 48)
+                    VStack(alignment: .leading) {
+                        Text("About LanGuard").font(.headline)
+                        Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?")")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Text("Made by Roy Padina").font(.subheadline.bold())
+                Text(AboutInfo.blurb).font(.caption).foregroundStyle(.secondary)
+                Text(AboutInfo.ask).font(.caption).foregroundStyle(.secondary)
+                HStack {
+                    Button("Support on Ko-fi ☕") { NSWorkspace.shared.open(AboutInfo.koFi) }
+                        .buttonStyle(.borderedProminent)
+                    Button("GitHub") { NSWorkspace.shared.open(AboutInfo.github) }
                 }
             }
         }
