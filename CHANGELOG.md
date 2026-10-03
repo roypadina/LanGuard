@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-10-03
+
+### Added
+- About section in Settings, "About LanGuard" and "Support on Ko-fi" menu items.
+
 ## [1.0.1] - 2026-06-09
 
 ### Fixed
