@@ -182,7 +182,8 @@ public final class Protection: ObservableObject {
 
         // Learn: LAN and Wi-Fi on the same router = a network where switching happens.
         // Never re-learn a network the user switched off (gate-3 #6).
-        let learned = !snap.disabled.contains(net) && wired != nil && wifi != nil && Net.router(wired!) == Net.router(wifi!)
+        let sameRouter = wired.flatMap(Net.router).map { r in wifi.flatMap(Net.router) == r } ?? false
+        let learned = !snap.disabled.contains(net) && sameRouter
         if learned, !snap.protected.contains(net) { settings.setProtected(net, true) }
         guard learned || snap.protected.contains(net) else {
             if st != nil { NetHelper.run(["down"]); expectingState = false }
