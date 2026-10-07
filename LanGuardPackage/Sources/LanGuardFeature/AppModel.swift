@@ -11,14 +11,22 @@ public final class AppModel: ObservableObject {
     public let settings: AppSettings
     public let monitor: NetworkMonitor
     public let engine: ToggleEngine
+    public let handover: Handover
+    public let protection: Protection
 
     private var bag = Set<AnyCancellable>()
+    /// False for a duplicate instance that is quitting: it must not touch the real one's protection.
+    private var started = false
 
     public init() {
         let settings = AppSettings()
         let monitor = NetworkMonitor()
+        let protection = Protection(settings: settings)
+        let handover = Handover(settings: settings, protection: protection)
         self.settings = settings
         self.monitor = monitor
+        self.handover = handover
+        self.protection = protection
 
         let deps = ToggleEngine.Dependencies(
             activeWiredNames: { [monitor] in
@@ -33,23 +41,24 @@ public final class AppModel: ObservableObject {
                     .filter { settings.wifiEnabled($0) }
             },
             setWiFiPower: { on, names in
+                guard on else {
+                    // Wi-Fi goes off only after traffic has moved to the LAN (see Handover).
+                    handover.toLAN(names, lanName: {
+                        InterfaceCatalog.wired()
+                            .first { settings.wiredEnabled($0) && monitor.linkActive($0.bsdName) }?
+                            .displayName ?? "Wired LAN"
+                    })
+                    return
+                }
                 // Only touch interfaces whose power actually differs, and only
                 // notify if something really changed — no redundant banners.
-                let toChange = names.filter { WiFiController.isPoweredOn($0) != on }
-                Log.write("setWiFiPower(on: \(on)) targets=\(names) changing=\(toChange)")
+                let toChange = names.filter { !WiFiController.isPoweredOn($0) }
+                Log.write("setWiFiPower(on: true) targets=\(names) changing=\(toChange)")
                 guard !toChange.isEmpty else { return }
-                WiFiController.setPower(on, interfaces: toChange)
+                WiFiController.setPower(true, interfaces: toChange)
                 guard settings.notificationsEnabled else { return }
-                if on {
-                    Notifier.post(title: "Wi-Fi on",
-                                  body: "Wired LAN disconnected — Wi-Fi turned back on.")
-                } else {
-                    let trigger = InterfaceCatalog.wired()
-                        .first { settings.wiredEnabled($0) && monitor.linkActive($0.bsdName) }
-                    let label = trigger?.displayName ?? "Wired LAN"
-                    Notifier.post(title: "Wi-Fi off",
-                                  body: "\(label) connected — Wi-Fi turned off.")
-                }
+                Notifier.post(title: "Wi-Fi on",
+                              body: "Wired LAN disconnected — Wi-Fi turned back on.")
             },
             anyWiFiOn: {
                 InterfaceCatalog.wifi()
@@ -76,10 +85,25 @@ public final class AppModel: ObservableObject {
         engine.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &bag)
+        protection.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &bag)
+        handover.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &bag)
     }
 
     /// Called once at launch.
     public func start() {
+        // One instance only: two would fight over the stable address (Fable gate-1 #9).
+        let me = NSRunningApplication.current
+        if NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "")
+            .contains(where: { $0 != me }) {
+            Log.write("another LanGuard is running → quit")
+            NSApp.terminate(nil)
+            return
+        }
+        started = true
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         Log.write("=== LanGuard \(version) start (debug logging on) ===")
         LegacyCleanup.run()
@@ -94,15 +118,52 @@ public final class AppModel: ObservableObject {
             LoginItem.promptForApprovalIfNeeded()
         }
 
-        monitor.onChange = { [weak self] in self?.engine.evaluate() }
+        monitor.onChange = { [weak self] in self?.evaluate() }
         monitor.start()
+        evaluate()
+        HotKey.start(settings.hotKey) { [weak self] in self?.switchToWiFi() }
+        protection.start()
+    }
+
+    /// App quitting: remove protection so nothing is left pointing at a link LanGuard no longer follows.
+    public func shutdown() { if started { protection.stop() } }
+
+    public func setProtection(_ on: Bool) {
+        settings.protectionEnabled = on
+        protection.reconcile()
+    }
+
+    /// Current network in/out of the protected set ("Protect this network").
+    public func setProtectThisNetwork(_ on: Bool) {
+        guard let net = protection.currentNetwork else { return }
+        settings.setProtected(net, on, byUser: true)
+        DispatchQueue.main.async { self.protection.reconcile() }
+    }
+
+    public func setHotKey(_ combo: HotKeyCombo) {
+        settings.hotKey = combo
+        HotKey.register(combo)
+    }
+
+    private func evaluate() {
         engine.evaluate()
+        // Also when auto-toggle is off: a "Switch to Wi-Fi" still needs closing out.
+        if !engine.wiredUp { handover.lanUnplugged() } else if !engine.wifiOn { handover.wifiTurnedOff() }
+    }
+
+    /// "Switch to Wi-Fi" (menu + global shortcut): move traffic to Wi-Fi so the LAN can be unplugged.
+    public func switchToWiFi() {
+        guard engine.wiredUp else { return }
+        let wifi = InterfaceCatalog.wifi().map(\.bsdName).filter { settings.wifiEnabled($0) }
+        handover.toWiFi(wifi, wired: engine.activeWired)
     }
 
     // MARK: - View-facing helpers
 
     public func setAuto(_ on: Bool) {
         settings.autoEnabled = on
+        handover.reset()
+        protection.reconcile()
         if on { engine.reapply() } else { engine.evaluate() }
     }
 

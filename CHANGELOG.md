@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-07
+
+### Added
+- **Connection protection** (optional, Settings › Protection): traffic uses a stable address that moves
+  between LAN and Wi-Fi, so running connections (e.g. AI agents, downloads) survive plugging or
+  unplugging the LAN or a dock. Root helper + guardian installed with one admin prompt; the guardian
+  removes everything within seconds if the network looks wrong. IPv4, DHCP networks where LAN and
+  Wi-Fi share a router.
+- **Panic**: "Restore normal networking" (top of the menu), a Raycast-friendly script, and a terminal
+  one-liner in the README.
+- **Switch to Wi-Fi** before unplugging: menu item + global shortcut (default ⌃⌥⌘L, recordable in
+  Settings), live progress window, "Safe to unplug LAN" popup.
+- Per-notification switches: Wi-Fi-off banner, Wi-Fi-back-on banner, progress window, popup.
+
+### Changed
+- Plugging in the LAN now waits until it reaches the internet before turning Wi-Fi off; a LAN without
+  internet never cuts Wi-Fi.
+- Settings is split into tabs (General, Interfaces, Switching, Protection, About).
+
 ## [1.0.4] - 2026-10-03
 
 ### Changed

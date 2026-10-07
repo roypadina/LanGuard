@@ -61,7 +61,9 @@ manually flip Wi-Fi back on while docked, it stays on until you next unplug.
 | 😴 **Wake-aware** | A transition that happened while asleep is detected and corrected on wake. |
 | 🎛️ **Per-interface** | Pick which wired adapters trigger and which Wi-Fi adapters are controlled. |
 | 🧪 **Ignores virtual NICs** | Bridge / VPN / VM adapters (e.g. VMware `vmnet`) are off by default so they can't pin Wi-Fi off. |
-| 🔔 **Notifications** | Optional banner whenever Wi-Fi is toggled. |
+| 🤝 **No-drop hand-over** | Plug in LAN: Wi-Fi stays on until the LAN reaches the internet and Wi-Fi traffic goes quiet, then turns off. |
+| ⌨️ **Switch to Wi-Fi** | Menu or a global shortcut (default `⌃⌥⌘L`, record your own in Settings) before unplugging: Wi-Fi on, traffic moved to it with a live progress window, then a "safe to unplug LAN" popup. |
+| 🔔 **Notifications** | Each banner / popup can be switched on or off in Settings. |
 | 🧭 **Configurable indicator** | Menu-bar shows `LAN` / `Wi-Fi` / `Off` — icon only, icon + label, or label only. |
 | ⏸️ **Master switch** | Pause all automatic toggling from the menu. |
 | 🚀 **Start at login** | Self-healing login item — re-registers if the app moves; prompts if macOS needs approval. |
@@ -123,7 +125,9 @@ Click the menu-bar icon for status, the **Auto-toggle** master switch, and **Set
 In **Settings** you can:
 - choose which **wired adapters** count as triggers (real adapters on by default, virtual off),
 - choose which **Wi-Fi adapters** are controlled,
-- toggle **notifications**,
+- toggle each **notification** (Wi-Fi off / Wi-Fi back on banners, progress window, "safe to unplug" popup),
+- record the **Switch to Wi-Fi shortcut**,
+- allow **moving traffic before unplug** (one admin prompt installs a sudo rule limited to `networksetup -ordernetworkservices`),
 - pick the **menu-bar icon style** (icon / icon + label / label),
 - enable **Start at login**.
 
@@ -154,6 +158,31 @@ See the [Wiki](https://github.com/roypadina/LanGuard/wiki) for deeper docs,
 [`CHANGELOG.md`](CHANGELOG.md) for release history, and [`CLAUDE.md`](CLAUDE.md) for the
 full component map.
 
+## Connection protection & Panic
+
+Optional (Settings → Connection protection, off by default). LanGuard keeps a stable address that moves
+between LAN and Wi-Fi, so connections (agents, VPNs, downloads) survive plugging/unplugging the cable.
+It only applies on networks where LAN and Wi-Fi share a router. Everything it changes is one extra
+address plus two routes (`0.0.0.0/1`, `128.0.0.0/1`) — nothing persistent; a reboot clears it.
+A root guardian checks every ~3 s and removes everything when the network looks wrong.
+Limits: IPv4 only; needs DHCP on both LAN and Wi-Fi; don't combine with a full-tunnel VPN ("send all
+traffic", e.g. OpenVPN `redirect-gateway`) — split-tunnel VPNs (Pritunl profiles with routes, Tailscale) work.
+Pulling a whole dock removes its network adapter: VPN clients tied to it (e.g. Pritunl/OpenVPN) may
+drop and need a manual reconnect; Claude Code, browsers and most apps carry on.
+The first unplug on a new network is not protected yet: a network is learned once LAN and Wi-Fi are seen
+on the same router (or tick "Protect this network").
+
+**Panic — restore normal networking**, from easiest:
+1. Menu bar → **⚠︎ Restore normal networking (panic)**.
+2. Raycast script **LanGuard Panic** (works even if LanGuard is hung; asks for your password if needed).
+3. Terminal, without LanGuard or its helper: run `sudo -s`, then paste:
+   ```sh
+   for n in 0.0.0.0/1 128.0.0.0/1; do i=$(route -n get -net $n 2>/dev/null | awk '$1=="interface:"{print $2}'); case $i in en[0-9]*) route -q -n delete -net $n;; esac; done; for i in $(ifconfig -l | tr ' ' '\n' | grep -E '^en[0-9]+$'); do p=$(ipconfig getifaddr $i); ifconfig $i | awk '/inet .* netmask 0xffffffff/{print $2}' | while read a; do [ "$a" != "$p" ] && ifconfig $i inet $a -alias; done; done; rm -f /var/run/languard-net.state; touch /var/run/languard-net.panic
+   ```
+4. Reboot.
+
+Re-enable afterwards from the menu (**Re-enable connection protection**).
+
 ## Is it safe?
 
 Fair question — it toggles your network and launches at login. Here's the honest picture:
@@ -163,7 +192,7 @@ Fair question — it toggles your network and launches at login. Here's the hone
   networking APIs (CoreWLAN, SystemConfiguration). The only external tools it ever runs are
   read-only `ifconfig` (a link-state fallback) and a one-time `launchctl` to remove the legacy
   LaunchAgent — never `networksetup`, never with elevated privileges.
-- **No admin / sudo.** It never asks for your password or installs a privileged helper.
+- **No admin / sudo.** It never asks for your password or installs a privileged helper (unless you enable the optional connection protection, which installs the root helper described above).
 - **Ad-hoc signed, _not_ notarized.** That's the one rough edge: macOS can't verify the
   developer, so the first launch is blocked until you **right-click → Open** (or clear
   quarantine with the `xattr` command above). Notarization needs a paid Apple Developer ID;

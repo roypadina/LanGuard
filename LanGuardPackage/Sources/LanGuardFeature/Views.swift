@@ -10,9 +10,23 @@ public struct MenuContent: View {
     public init(model: AppModel) { self.model = model }
 
     public var body: some View {
+        // Always first and always enabled while the helper exists: one click back to normal networking.
+        if NetHelper.installed || NetHelper.state() != nil {
+            Button("⚠︎ Restore normal networking (panic)") { model.protection.panic() }
+            if NetHelper.panicked {
+                Button("Re-enable connection protection") { model.protection.rearm() }
+            }
+            Divider()
+        }
+
         Text(model.statusLine)
+        Text("Protection: \(model.protection.status)")
+        if let status = model.handover.status { Text(status) }
 
         Divider()
+
+        Button("Switch to Wi-Fi (safe unplug)   \(model.settings.hotKey.label)") { model.switchToWiFi() }
+            .disabled(!model.engine.wiredUp)
 
         Toggle("Auto-toggle Wi-Fi", isOn: Binding(
             get: { model.settings.autoEnabled },
@@ -122,8 +136,18 @@ struct AboutView: View {
 
 public struct ConfigView: View {
     @ObservedObject var model: AppModel
+    @ObservedObject private var recorder = ShortcutRecorder.shared
     @State private var loginOn: Bool = LoginItem.isEnabled
     @State private var tick: Int = 0
+    @State private var pane: Pane = .general
+
+    /// Explicit in-window tab bar: on macOS 26+ a native `TabView` moves its tabs into the title-bar
+    /// toolbar as icon-only buttons that collapse behind a ">>" overflow — tabs become invisible.
+    private enum Pane: String, CaseIterable, Identifiable {
+        case general = "General", interfaces = "Interfaces", switching = "Switching",
+             protection = "Protection", about = "About"
+        var id: Self { self }
+    }
 
     private let refresh = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
@@ -133,43 +157,71 @@ public struct ConfigView: View {
     private var wifi: [NetInterface] { InterfaceCatalog.wifi() }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(spacing: 0) {
+            Picker("Section", selection: $pane) {
+                ForEach(Pane.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
 
-            Toggle("Auto-toggle enabled", isOn: Binding(
-                get: { model.settings.autoEnabled },
-                set: { model.setAuto($0) }
-            ))
-            .font(.headline)
+            Group {
+                switch pane {
+                case .general: general
+                case .interfaces: interfaces
+                case .switching: switching
+                case .protection: protection
+                case .about: about
+                }
+            }
+            .formStyle(.grouped)
+        }
+        .frame(width: 520, height: 500)
+        // Every 2 s the body re-evaluates (helper/login/hot-key state, status texts); the interface
+        // rows and the protection status row also carry `.id(tick)` so they are rebuilt, not diffed.
+        .onReceive(refresh) { _ in tick &+= 1 }
+        .onAppear { loginOn = LoginItem.isEnabled }
+    }
 
-            VStack(alignment: .leading, spacing: 2) {
+    // MARK: General
+
+    private var general: some View {
+        Form {
+            Section {
+                Toggle("Auto-toggle enabled", isOn: Binding(
+                    get: { model.settings.autoEnabled },
+                    set: { model.setAuto($0) }
+                ))
                 Toggle("Start at login", isOn: $loginOn)
                     .onChange(of: loginOn) { _, newValue in
                         LoginItem.setEnabled(newValue)
                         if newValue { LoginItem.promptForApprovalIfNeeded() }
                         loginOn = LoginItem.isEnabled
                     }
+            } footer: {
                 Text("Login item: \(LoginItem.statusDescription)")
-                    .font(.caption)
                     .foregroundStyle(LoginItem.status == .requiresApproval ? Color.orange : .secondary)
             }
 
-            Toggle("Show notifications when Wi-Fi toggles", isOn: Binding(
-                get: { model.settings.notificationsEnabled },
-                set: { model.settings.notificationsEnabled = $0 }
-            ))
-
-            Picker("Menu bar icon", selection: Binding(
-                get: { model.settings.menuIconStyle },
-                set: { model.settings.menuIconStyle = $0 }
-            )) {
-                ForEach(MenuIconStyle.allCases) { style in
-                    Text(style.title).tag(style)
+            Section {
+                Picker("Menu bar icon", selection: Binding(
+                    get: { model.settings.menuIconStyle },
+                    set: { model.settings.menuIconStyle = $0 }
+                )) {
+                    ForEach(MenuIconStyle.allCases) { style in
+                        Text(style.title).tag(style)
+                    }
                 }
+                .pickerStyle(.segmented)
             }
-            .pickerStyle(.segmented)
+        }
+    }
 
-            Divider()
+    // MARK: Interfaces
 
+    private var interfaces: some View {
+        Form {
             section(
                 title: "Wired triggers",
                 subtitle: "Wi-Fi turns off when any checked wired link is active. Virtual adapters (bridge/VPN/VM) are off by default.",
@@ -182,8 +234,6 @@ public struct ConfigView: View {
                 }
             )
 
-            Divider()
-
             section(
                 title: "Controlled Wi-Fi",
                 subtitle: "These adapters get switched on/off.",
@@ -195,11 +245,115 @@ public struct ConfigView: View {
                     model.selectionChanged()
                 }
             )
+        }
+    }
 
-            Divider()
+    // MARK: Switching
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Debug").font(.headline)
+    private var switching: some View {
+        Form {
+            Section {
+                LabeledContent("Shortcut") {
+                    HStack {
+                        if HotKey.inUse {
+                            Text("Used by another app — record another").font(.caption).foregroundStyle(.orange)
+                        }
+                        Button(recorder.recording ? "Press keys… (Esc cancels)" : model.settings.hotKey.label) {
+                            recorder.toggle(current: model.settings.hotKey, save: model.setHotKey)
+                        }
+                    }
+                }
+            } header: {
+                Text("Switch to Wi-Fi")
+            } footer: {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Before unplugging the LAN: turns Wi-Fi on, moves traffic to it, waits for the LAN to go quiet, then tells you it's safe to unplug.")
+                    Text("Global: works in every app and wins over the same keys inside apps (e.g. cmux). Needs ⌃, ⌥ or ⌘.")
+                }
+            }
+
+            Section("Notifications") {
+                Toggle("LAN connected: \"Wi-Fi off, traffic on LAN\" banner", isOn: Binding(
+                    get: { model.settings.notifyMovedToLAN },
+                    set: { model.settings.notifyMovedToLAN = $0 }
+                ))
+                Toggle("LAN unplugged: \"Wi-Fi back on\" banner", isOn: Binding(
+                    get: { model.settings.notificationsEnabled },
+                    set: { model.settings.notificationsEnabled = $0 }
+                ))
+                Toggle("Switch to Wi-Fi: progress window (closes itself when ready)", isOn: Binding(
+                    get: { model.settings.switchProgressPopup },
+                    set: { model.settings.switchProgressPopup = $0 }
+                ))
+                Toggle("Switch to Wi-Fi: \"Safe to unplug LAN\" popup", isOn: Binding(
+                    get: { model.settings.safeToUnplugPopup },
+                    set: { model.settings.safeToUnplugPopup = $0 }
+                ))
+            }
+        }
+    }
+
+    // MARK: Protection
+
+    private var protection: some View {
+        Form {
+            Section {
+                if NetHelper.installed {
+                    Toggle("Protect connections", isOn: Binding(
+                        get: { model.settings.protectionEnabled },
+                        set: { model.setProtection($0) }
+                    ))
+                    if let net = model.protection.currentNetwork {
+                        Toggle("Protect this network (\(net.split(separator: "@").first ?? ""))", isOn: Binding(
+                            get: { model.settings.protectedNetworks.contains(net) },
+                            set: { model.setProtectThisNetwork($0) }
+                        ))
+                    }
+                    LabeledContent("Status", value: model.protection.status)
+                        .id(tick) // force status refresh
+                    HStack {
+                        if NetHelper.outdated {
+                            Button("Update helper…") { NetHelper.install() }
+                        }
+                        Button("Uninstall helper…") { model.setProtection(false); NetHelper.remove() }
+                    }
+                } else {
+                    Button("Install helper… (admin password once)") { NetHelper.install() }
+                }
+            } header: {
+                Text("Connection protection")
+            } footer: {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Keeps connections (agents, VPNs, downloads) alive when you plug or unplug the LAN: traffic uses a stable address that moves between LAN and Wi-Fi. Only on networks where LAN and Wi-Fi share a router. IPv4 only. Not for full-tunnel VPNs (\"send all traffic\") — split-tunnel VPNs like Pritunl and Tailscale are fine.")
+                    Text("Installs a root helper (\(NetHelper.helperPath)), a guardian that removes everything if the network looks wrong, and a sudo rule for that helper only.")
+                }
+            }
+
+            Section("Panic") {
+                Text("Menu → \"Restore normal networking\", the Raycast script \"LanGuard Panic\", or reboot. Without LanGuard: in Terminal run `sudo -s`, then paste the one-liner from the README (section \"Panic\").")
+            }
+        }
+    }
+
+    // MARK: About
+
+    private var about: some View {
+        Form {
+            Section {
+                HStack(spacing: 10) {
+                    Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 40, height: 40)
+                    VStack(alignment: .leading) {
+                        Text("LanGuard").font(.headline)
+                        Text("Version \(AboutInfo.version)").font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button("About LanGuard…") { AboutWindow.show() }
+                    Button("Support on Ko-fi ☕") { NSWorkspace.shared.open(AboutInfo.koFi) }
+                        .buttonStyle(.borderedProminent)
+                }
+            }
+
+            Section {
                 Toggle("Enable debug logging", isOn: Binding(
                     get: { model.settings.debugLoggingEnabled },
                     set: {
@@ -207,37 +361,16 @@ public struct ConfigView: View {
                         if $0 { Log.write("--- debug logging enabled from Settings ---") }
                     }
                 ))
-                Text("Writes a log to ~/Library/Logs/LanGuard. Turn this on, reproduce the issue, then send us the log file.")
-                    .font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
                 HStack {
                     Button("Reveal Logs in Finder") { Log.revealInFinder() }
                     Button("Clear Logs") { Log.clear() }
                 }
-            }
-
-            Divider()
-
-            HStack(spacing: 10) {
-                Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 40, height: 40)
-                VStack(alignment: .leading) {
-                    Text("LanGuard").font(.headline)
-                    Text("Version \(AboutInfo.version)").font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer()
-            }
-            HStack {
-                Spacer()
-                Button("About LanGuard…") { AboutWindow.show() }
-                Button("Support on Ko-fi ☕") { NSWorkspace.shared.open(AboutInfo.koFi) }
-                    .buttonStyle(.borderedProminent)
+            } header: {
+                Text("Debug")
+            } footer: {
+                Text("Writes a log to ~/Library/Logs/LanGuard. Turn this on, reproduce the issue, then send us the log file.")
             }
         }
-        .padding(20)
-        .frame(width: 440)
-        .id(tick) // force status-dot refresh
-        .onReceive(refresh) { _ in tick &+= 1 }
-        .onAppear { loginOn = LoginItem.isEnabled }
     }
 
     @ViewBuilder
@@ -249,13 +382,9 @@ public struct ConfigView: View {
         isOn: @escaping (NetInterface) -> Bool,
         set: @escaping (NetInterface, Bool) -> Void
     ) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.headline)
-            Text(subtitle).font(.caption).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
+        Section {
             if interfaces.isEmpty {
-                Text("No interfaces found.").font(.caption).foregroundStyle(.secondary)
+                Text("No interfaces found.").foregroundStyle(.secondary)
             } else {
                 ForEach(interfaces) { iface in
                     Toggle(isOn: Binding(
@@ -276,8 +405,89 @@ public struct ConfigView: View {
                             }
                         }
                     }
+                    .id(tick) // force status-dot refresh
                 }
             }
+        } header: {
+            Text(title)
+        } footer: {
+            Text(subtitle)
         }
+    }
+}
+
+// MARK: - Switch to Wi-Fi: shortcut recorder + progress window
+
+/// Records one key combo for the global shortcut. Shared object, because the Settings view is
+/// rebuilt every 2 s (`.id(tick)`), which would drop view-local recording state.
+final class ShortcutRecorder: ObservableObject {
+    static let shared = ShortcutRecorder()
+    @Published private(set) var recording = false
+    private var monitor: Any?
+
+    func toggle(current: HotKeyCombo, save: @escaping (HotKeyCombo) -> Void) {
+        if recording { finish(); HotKey.register(current); return }
+        HotKey.unregister() // so pressing the current combo records it instead of firing it
+        recording = true
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self else { return event }
+            if event.keyCode == 53 { self.finish(); HotKey.register(current); return nil } // Esc
+            guard let combo = HotKeyCombo(keyCode: event.keyCode, flags: event.modifierFlags,
+                                          characters: event.charactersIgnoringModifiers) else {
+                NSSound.beep() // needs ⌃, ⌥ or ⌘
+                return nil
+            }
+            self.finish()
+            save(combo)
+            return nil
+        }
+    }
+
+    private func finish() {
+        if let monitor { NSEvent.removeMonitor(monitor) }
+        monitor = nil
+        recording = false
+    }
+}
+
+/// Floating, closeable progress window for Switch to Wi-Fi. Closing it doesn't stop the switch;
+/// the hand-over closes it itself when it's safe to unplug.
+@MainActor
+enum ProgressPanel {
+    private static var panel: NSPanel?
+
+    static func show(_ handover: Handover) {
+        if panel == nil {
+            let p = NSPanel(contentViewController: NSHostingController(rootView: SwitchProgressView(handover: handover)))
+            p.title = "LanGuard"
+            p.styleMask = [.titled, .closable, .utilityWindow]
+            p.level = .floating
+            p.hidesOnDeactivate = false
+            p.isReleasedWhenClosed = false
+            panel = p
+        }
+        panel?.center()
+        panel?.orderFrontRegardless()
+    }
+
+    static func close() { panel?.orderOut(nil) }
+}
+
+struct SwitchProgressView: View {
+    @ObservedObject var handover: Handover
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("Switching to Wi-Fi").font(.headline)
+            }
+            Text(handover.status ?? "Done").font(.callout)
+            Text("Keep the LAN cable plugged in. This window closes itself when it's safe to unplug.")
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .frame(width: 320, alignment: .leading)
     }
 }

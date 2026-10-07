@@ -1,4 +1,5 @@
 import XCTest
+import AppKit
 import ServiceManagement
 @testable import LanGuardFeature
 
@@ -141,5 +142,48 @@ final class AppSettingsTests: XCTestCase {
         settings.setWiredEnabled(phys, false)
         XCTAssertTrue(settings.wiredEnabled(virt))
         XCTAssertFalse(settings.wiredEnabled(phys))
+    }
+}
+
+final class ProtectionTests: XCTestCase {
+
+    func test_target_prefersWiredUnlessSwitched() {
+        XCTAssertEqual(Protection.target(preferWiFi: false, wired: "en7", wifi: "en0"), "en7")
+        XCTAssertEqual(Protection.target(preferWiFi: true, wired: "en7", wifi: "en0"), "en0")
+        XCTAssertEqual(Protection.target(preferWiFi: false, wired: nil, wifi: "en0"), "en0")   // LAN unplugged
+        XCTAssertEqual(Protection.target(preferWiFi: true, wired: "en7", wifi: nil), "en7")    // Wi-Fi not up yet
+        XCTAssertNil(Protection.target(preferWiFi: false, wired: nil, wifi: nil))
+    }
+
+    func test_candidates_topOfSubnetDown_skipsBroadcastAndExcludes() {
+        let c = Protection.candidates(ip: "192.168.1.16", mask: "255.255.255.0",
+                                      exclude: ["192.168.1.16", "192.168.1.1", "192.168.1.253"], count: 3)
+        XCTAssertEqual(c, ["192.168.1.254", "192.168.1.252", "192.168.1.251"])
+    }
+
+    func test_candidates_smallSubnetNeverReturnsNetworkAddress() {
+        let c = Protection.candidates(ip: "10.0.0.2", mask: "255.255.255.252", exclude: ["10.0.0.2"])
+        XCTAssertEqual(c, ["10.0.0.1"])                                   // /30: .3 broadcast, .0 network
+        XCTAssertEqual(Protection.candidates(ip: "10.0.0.2", mask: "255.255.255.255", exclude: []), [])
+        XCTAssertEqual(Protection.candidates(ip: "bad", mask: "255.255.255.0", exclude: []), [])
+    }
+}
+
+final class HotKeyComboTests: XCTestCase {
+
+    func test_recordsComboWithLabel() {
+        let combo = HotKeyCombo(keyCode: 37, flags: [.control, .option, .command], characters: "l")
+        XCTAssertEqual(combo?.label, "⌃⌥⌘L")
+        XCTAssertEqual(combo, .default)
+    }
+
+    func test_plainOrShiftOnlyKeyRejected() {
+        XCTAssertNil(HotKeyCombo(keyCode: 37, flags: [], characters: "l"))
+        XCTAssertNil(HotKeyCombo(keyCode: 37, flags: [.shift], characters: "L"))
+    }
+
+    func test_specialKeysNamedOrCoded() {
+        XCTAssertEqual(HotKeyCombo(keyCode: 123, flags: [.shift, .command], characters: "\u{F702}")?.label, "⇧⌘←")
+        XCTAssertEqual(HotKeyCombo(keyCode: 105, flags: [.control], characters: "\u{F710}")?.label, "⌃#105")
     }
 }
