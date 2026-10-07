@@ -133,7 +133,7 @@ In **Settings** you can:
 
 <div align="center">
 
-<img src="docs/screenshots/settings.png" alt="LanGuard Settings: Auto-toggle, Start at login, notifications, menu-bar icon style, per-interface Wired triggers (with the active link dotted green) and Controlled Wi-Fi adapters." width="380">
+<img src="docs/screenshots/settings.png" alt="LanGuard Settings, Protection tab: connection protection on, this network protected, status showing the stable address on the wired link, and the Panic instructions. Other tabs: General, Interfaces, Switching, About." width="380">
 
 </div>
 

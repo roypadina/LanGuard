@@ -267,7 +267,7 @@ public struct ConfigView: View {
                 Text("Switch to Wi-Fi")
             } footer: {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Before unplugging the LAN: turns Wi-Fi on, moves traffic to it, waits for the LAN to go quiet, then tells you it's safe to unplug.")
+                    Text("Before unplugging the LAN: turns Wi-Fi on, checks it reaches the internet, moves traffic to it (connection protection), then tells you it's safe to unplug.")
                     Text("Global: works in every app and wins over the same keys inside apps (e.g. cmux). Needs ⌃, ⌥ or ⌘.")
                 }
             }
@@ -405,7 +405,7 @@ public struct ConfigView: View {
                             }
                         }
                     }
-                    .id(tick) // force status-dot refresh
+                    .id("\(iface.id)-\(tick)") // unique per row; tick forces the status-dot refresh
                 }
             }
         } header: {
