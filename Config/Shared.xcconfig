@@ -9,8 +9,8 @@
 PRODUCT_NAME = LanGuard
 PRODUCT_DISPLAY_NAME = LanGuard
 PRODUCT_BUNDLE_IDENTIFIER = com.roy.languard
-MARKETING_VERSION = 1.0.4
-CURRENT_PROJECT_VERSION = 5
+MARKETING_VERSION = 1.1.0
+CURRENT_PROJECT_VERSION = 6
 
 // ==========================================
 // Platform Configuration
@@ -23,6 +23,9 @@ MACOSX_DEPLOYMENT_TARGET = 14.0
 GENERATE_INFOPLIST_FILE = YES
 // Menu-bar agent: no Dock icon, no main window on launch.
 INFOPLIST_KEY_LSUIElement = YES
+// Connection protection reads the router's MAC (ARP) and probes the local network; without this
+// macOS Local Network privacy hides the ARP table from the app.
+INFOPLIST_KEY_NSLocalNetworkUsageDescription = LanGuard identifies your router and checks for a free address so connections survive switching between LAN and Wi-Fi.
 
 // ==========================================
 // Entitlements

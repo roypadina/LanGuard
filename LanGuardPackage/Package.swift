@@ -15,7 +15,13 @@ let package = Package(
         ),
     ],
     targets: [
-        .target(name: "LanGuardFeature"),
+        .target(
+            name: "LanGuardFeature",
+            resources: [
+                .copy("Resources/languard-net.sh"),
+                .copy("Resources/com.roypadina.languard-net.plist"),
+            ]
+        ),
         .testTarget(
             name: "LanGuardFeatureTests",
             dependencies: ["LanGuardFeature"]
