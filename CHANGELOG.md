@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-10-07
+
+### Changed
+- Quitting, updating or relaunching LanGuard keeps connection protection (and your connections); the
+  guardian keeps it safe meanwhile and the next launch takes over. Turn it off with the Settings
+  switch or panic.
+
+### Fixed
+- After a relaunch, addresses LanGuard itself used before were wrongly treated as taken.
+
 ## [1.1.1] - 2026-10-07
 
 ### Fixed

@@ -183,6 +183,11 @@ on the same router (or tick "Protect this network").
 
 Re-enable afterwards from the menu (**Re-enable connection protection**).
 
+Quitting LanGuard does **not** turn protection off (so a quit, update or relaunch doesn't cut your
+connections): the guardian keeps watching and the next launch takes over. While LanGuard is quit, an
+unplug can't move the address, so the guardian removes it within seconds — connections on it drop and
+networking falls back to normal. To turn protection off, use the Settings switch or panic.
+
 ## Is it safe?
 
 Fair question — it toggles your network and launches at login. Here's the honest picture:

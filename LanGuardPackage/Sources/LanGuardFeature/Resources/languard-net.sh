@@ -34,6 +34,15 @@ ip2int()   { local IFS=. a b c d; read -r a b c d <<<"$1"; echo $(( (10#$a<<24) 
 dhcp_ip()  { ipconfig getifaddr "$1" 2>/dev/null; }
 router()   { ipconfig getoption "$1" router 2>/dev/null; }
 gw_mac()   { arp -n "$1" 2>/dev/null | grep -oE '([0-9a-f]{1,2}:){5}[0-9a-f]{1,2}' | head -1; }
+# MAC in arp's short form (no leading zeros per octet: 0b:00 -> b:0) so ifconfig and arp compare equal.
+norm_mac() { tr 'A-F' 'a-f' | sed -E 's/(^|:)0([0-9a-f])/\1\2/g'; }
+# This Mac's own adapter MACs (normalized), one per line.
+own_macs() { ifconfig 2>/dev/null | awk '/ether /{print $2}' | norm_mac; }
+# Someone ELSE answers ARP for $1 (our own stale entries, e.g. after a relaunch, don't count).
+arp_taken() {
+  local m; m=$(arp -n "$1" 2>/dev/null | grep -oE '([0-9a-f]{1,2}:){5}[0-9a-f]{1,2}' | head -1 | norm_mac)
+  [ -n "$m" ] && ! own_macs | grep -qxF "$m"
+}
 mask()     { ipconfig getoption "$1" subnet_mask 2>/dev/null; }
 link_up()  { [ "$(ifconfig "$1" 2>/dev/null | awk '/status:/{print $2}')" = active ]; }
 # Interface of OUR exact /1 route, or empty. `route get -net` falls back to the default route when
@@ -113,7 +122,7 @@ cmd_up() { # iface A pid
   down                                                                          # clean slate (stale state, leftover /1 via en*)
   [ -z "$(holders "$A")" ] || exit 6
   ping -c1 -t1 -q -b "$ifc" "$A" >/dev/null 2>&1
-  arp -n "$A" 2>/dev/null | grep -qE '([0-9a-f]{1,2}:){5}[0-9a-f]{1,2}' && exit 6   # someone answers for A
+  arp_taken "$A" && exit 6                                                       # another device answers for A
   write_state "$A" "$ifc" "$gw" "$pid" "$(gw_mac "$gw")"                        # state first: check covers a crash mid-up
   attach "$ifc" "$A" "$gw"
   log "up $A on $ifc via $gw"

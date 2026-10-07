@@ -15,8 +15,6 @@ public final class AppModel: ObservableObject {
     public let protection: Protection
 
     private var bag = Set<AnyCancellable>()
-    /// False for a duplicate instance that is quitting: it must not touch the real one's protection.
-    private var started = false
 
     public init() {
         let settings = AppSettings()
@@ -103,7 +101,6 @@ public final class AppModel: ObservableObject {
             NSApp.terminate(nil)
             return
         }
-        started = true
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         Log.write("=== LanGuard \(version) start (debug logging on) ===")
         LegacyCleanup.run()
@@ -125,8 +122,6 @@ public final class AppModel: ObservableObject {
         protection.start()
     }
 
-    /// App quitting: remove protection so nothing is left pointing at a link LanGuard no longer follows.
-    public func shutdown() { if started { protection.stop() } }
 
     public func setProtection(_ on: Bool) {
         settings.protectionEnabled = on

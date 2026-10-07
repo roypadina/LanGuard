@@ -5,10 +5,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppModel.shared.start()
     }
-
-    func applicationWillTerminate(_ notification: Notification) {
-        AppModel.shared.shutdown()
-    }
 }
 
 @main
