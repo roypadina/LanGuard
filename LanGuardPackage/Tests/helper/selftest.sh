@@ -8,4 +8,5 @@ t ok 'is_pid 12345'; t no 'is_pid "12 34"'; t no 'is_pid -1'
 t no 'is_iface utun5'; t no 'is_iface "en0;id"'; t no 'is_iface en999'
 m=$(ip2int 255.255.255.0); a=$(ip2int 192.168.1.255); n=$(ip2int 192.168.1.0); h=$(ip2int 192.168.1.249)
 t ok '(( ((a|m)&0xFFFFFFFF) == 0xFFFFFFFF ))'; t ok '(( ((n&~m)&0xFFFFFFFF) == 0 ))'; t ok '(( ((h&~m)&0xFFFFFFFF) != 0 && ((h|m)&0xFFFFFFFF) != 0xFFFFFFFF ))'
+t ok '[ "$(echo 0b:00:4e:26:0a:c3 | norm_mac)" = "b:0:4e:26:a:c3" ]'; t ok '[ "$(echo B0:4E:26:0B:76:C3 | norm_mac)" = "b0:4e:26:b:76:c3" ]'
 [ $fail = 0 ] && echo "selftest: all passed"; exit $fail

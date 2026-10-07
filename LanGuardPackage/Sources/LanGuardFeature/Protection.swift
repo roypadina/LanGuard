@@ -100,8 +100,6 @@ public final class Protection: ObservableObject {
         }
     }
 
-    /// Quit / disable: remove everything.
-    func stop() { queue.sync { _ = NetHelper.run(["down"]); expectingState = false; publish("Off", nil) } }
 
     /// PANIC menu item. Sticky until `rearm()`.
     public func panic() {
