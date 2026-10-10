@@ -15,7 +15,8 @@
 # Verbs: up <iface> <A> <pid> | move <iface> | adopt <pid> | down | panic | arm | check | status
 #        netinfo <iface>   (read-only: router IP + MAC on iface; root sees ARP despite Local Network privacy)
 # Exit codes: 0 ok, 2 bad args, 3 route/VPN conflict, 4 panic set, 5 other instance,
-#             6 address taken, 7 verify failed (rolled back), 8 no state, 9 guardian not running.
+#             6 address taken, 7 verify failed (rolled back), 8 no state, 9 guardian not running,
+#             75 busy (another verb held the lock 15 s), 70-73 lockf error; the app retries on its next pass.
 set -u
 PATH=/usr/sbin:/sbin:/usr/bin:/bin
 export PATH
@@ -23,7 +24,8 @@ STATE=/var/run/languard-net.state
 PANIC=/var/run/languard-net.panic
 FAIL=/var/run/languard-net.fail
 TICK=/var/run/languard-net.tick      # written by every `check`: proof the guardian runs
-REASON=/var/run/languard-net.reason  # why the guardian last tore down (iface-gone|link|network|vpn|unhealthy)
+REASON=/var/run/languard-net.reason  # why the guardian last tore down (bad-state|iface-gone|link|network|vpn|unhealthy)
+LOCK=/var/run/languard-net.lock      # one verb at a time (see the dispatcher)
 NETS="0.0.0.0/1 128.0.0.0/1"
 
 is_iface() { [[ "$1" =~ ^en[0-9]{1,2}$ ]] && ifconfig "$1" >/dev/null 2>&1; }
@@ -159,8 +161,11 @@ cmd_check() {
   [ -f "$STATE" ] || { rm -f "$FAIL"; exit 0; }
   local A ifc gw pid why="" n fails limit plain
   A=$(state A); ifc=$(state IFACE); gw=$(state GW); pid=$(state PID)
-  if ! is_ip "$A" || ! is_iface "$ifc" || ! is_ip "$gw"; then echo iface-gone >"$REASON"; down; log "check: iface gone/bad state, down"; exit 0; fi
-  link_up "$ifc" && is_ip "$(dhcp_ip "$ifc")" || why="link"
+  if ! is_ip "$A" || ! [[ "$ifc" =~ ^en[0-9]{1,2}$ ]] || ! is_ip "$gw"; then echo bad-state >"$REASON"; down; log "check: bad state, down"; exit 0; fi
+  # A vanished interface (undock) is a normal strike, not an instant teardown: the app moves A within ~2 s,
+  # and an instant teardown here raced that move (2026-10-09: the move rewrote state without PID/MAC).
+  is_iface "$ifc" || why=iface-gone
+  [ -z "$why" ] && { link_up "$ifc" && is_ip "$(dhcp_ip "$ifc")" || why="link"; }
   [ -z "$why" ] && [ "$(router "$ifc")" != "$gw" ] && why=network
   [ -z "$why" ] && case "$(default_if)" in en[0-9]*) ;; *) why=vpn ;; esac
   [ -z "$why" ] && [ "$(holders "$A")" != "$ifc" ] && why=unhealthy
@@ -174,7 +179,7 @@ cmd_check() {
   fi
   if [ -z "$why" ]; then rm -f "$FAIL"; exit 0; fi
   # LAN gone and Wi-Fi still joining (no en* has DHCP yet): nothing to black-hole against — don't count.
-  if [ "$why" = link ] && lg_alive "$pid" && ! any_dhcp; then exit 0; fi
+  if { [ "$why" = link ] || [ "$why" = iface-gone ]; } && lg_alive "$pid" && ! any_dhcp; then exit 0; fi
   fails=$(cat "$FAIL" 2>/dev/null); [[ "$fails" =~ ^[0-9]+$ ]] || fails=0
   fails=$((fails + 1)); echo "$fails" >"$FAIL"
   limit=2; lg_alive "$pid" && limit=7                                            # app alive: ~21 s grace (join wait itself isn't counted)
@@ -183,6 +188,22 @@ cmd_check() {
 
 # Self-test hook: `LANGUARD_NET_LIB=1 source languard-net.sh` loads functions only (sudo env_reset never passes it).
 [ "${LANGUARD_NET_LIB:-}" = 1 ] && return 0
+
+# One verb at a time: a guardian `check` must never interleave with the app's up/move (2026-10-09: an
+# undock teardown ran mid-move). Re-exec under lockf; read-only verbs skip it. On a 15 s timeout the
+# removal verbs (panic after 2 s, down) run anyway — a stuck holder must never block a way out; the rest exit 75.
+case "${1:-}" in
+  up|move|adopt|down|panic|arm|check)
+    if [ "${LANGUARD_NET_LOCKED:-}" != 1 ]; then
+      [ "$1" = panic ] && touch "$PANIC"                                         # every verb sees it at once
+      (umask 077; : >>"$LOCK")                                                   # root-only: no user can hold it
+      t=15; [ "$1" = panic ] && t=2                                             # panic waits 2 s at most
+      LANGUARD_NET_LOCKED=1 lockf -k -s -t "$t" "$LOCK" "$0" "$@"; rc=$?
+      [ "$rc" -lt 64 ] && exit "$rc"                                             # the verb ran (its codes are < 64)
+      log "lock failed $rc ($1)"                                                 # 75 busy, 7x lockf error
+      case "$1" in panic|down) ;; *) exit "$rc" ;; esac
+    fi ;;
+esac
 
 case "${1:-}" in
   up)     shift; cmd_up "$@" ;;

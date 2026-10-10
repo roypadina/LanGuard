@@ -45,7 +45,7 @@ public enum NetHelper {
         return Date().timeIntervalSince1970 - t <= 15
     }
 
-    /// Why the guardian last tore protection down (iface-gone | link | network | vpn | unhealthy).
+    /// Why the guardian last tore protection down (bad-state | iface-gone | link | network | vpn | unhealthy).
     static var teardownReason: String? {
         (try? String(contentsOfFile: reasonPath, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -89,7 +89,7 @@ public enum NetHelper {
         let ok = admin("""
             \(helperPath) down 2>/dev/null || true; \
             /bin/launchctl bootout system/\(label) 2>/dev/null || true; \
-            rm -f \(plistPath) \(helperPath) \(sudoersFile)
+            rm -f \(plistPath) \(helperPath) \(sudoersFile) /var/run/languard-net.lock
             """)
         Log.write("NetHelper.remove ok=\(ok)")
         return ok

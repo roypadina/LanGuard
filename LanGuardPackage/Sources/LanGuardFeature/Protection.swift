@@ -196,7 +196,9 @@ public final class Protection: ObservableObject {
         }
 
         if let s = st {
-            if s["IFACE"] != target {
+            // IFACE == target but A not on it: a dock pull takes en8 and its alias, the state survives
+            // (iface-gone is a strike now) and the same en8 comes back empty on re-dock; `move` re-attaches.
+            if s["IFACE"] != target || !Net.hasAddress(target, s["A"] ?? "") {
                 let rc = NetHelper.run(["move", target])
                 // noState = the guardian tore down meanwhile: keep expecting so the hold logic sees it (gate-2 #7).
                 if rc == NetHelper.Exit.noState.rawValue { return }
@@ -274,6 +276,8 @@ enum Net {
     static func router(_ iface: String) -> String? { ipconfig(["getoption", iface, "router"]) }
     static func mask(_ iface: String) -> String? { ipconfig(["getoption", iface, "subnet_mask"]) }
     static func usable(_ iface: String) -> Bool { address(iface) != nil && router(iface) != nil }
+    /// Trailing space: `.2` must not match `.249`.
+    static func hasAddress(_ iface: String, _ a: String) -> Bool { shell("/sbin/ifconfig", [iface]).contains("inet \(a) ") }
 
     /// Network identity = router IP + its MAC (two homes with 192.168.1.1 stay distinct).
     /// No ARP entry yet (fresh link) → one ping on that interface fills it (gate-3 final #5).

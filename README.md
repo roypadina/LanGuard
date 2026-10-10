@@ -62,7 +62,7 @@ manually flip Wi-Fi back on while docked, it stays on until you next unplug.
 | 🎛️ **Per-interface** | Pick which wired adapters trigger and which Wi-Fi adapters are controlled. |
 | 🧪 **Ignores virtual NICs** | Bridge / VPN / VM adapters (e.g. VMware `vmnet`) are off by default so they can't pin Wi-Fi off. |
 | 🤝 **No-drop hand-over** | Plug in LAN: Wi-Fi stays on until the LAN reaches the internet and Wi-Fi traffic goes quiet, then turns off. |
-| ⌨️ **Switch to Wi-Fi** | Menu or a global shortcut (default `⌃⌥⌘L`, record your own in Settings) before unplugging: Wi-Fi on, traffic moved to it with a live progress window, then a "safe to unplug LAN" popup. |
+| ⌨️ **Switch to Wi-Fi** | Menu or a global shortcut (default `⌃⌥⌘L`, record your own in Settings) before unplugging: Wi-Fi on, traffic moved to it with a live progress window, then a "safe to unplug LAN" popup. Press it again while still plugged in to go back to LAN. |
 | 🔔 **Notifications** | Each banner / popup can be switched on or off in Settings. |
 | 🧭 **Configurable indicator** | Menu-bar shows `LAN` / `Wi-Fi` / `Off` — icon only, icon + label, or label only. |
 | ⏸️ **Master switch** | Pause all automatic toggling from the menu. |

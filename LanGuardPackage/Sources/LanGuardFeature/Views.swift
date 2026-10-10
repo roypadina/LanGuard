@@ -25,8 +25,12 @@ public struct MenuContent: View {
 
         Divider()
 
-        Button("Switch to Wi-Fi (safe unplug)   \(model.settings.hotKey.label)") { model.switchToWiFi() }
-            .disabled(!model.engine.wiredUp)
+        if model.handover.switchedToWiFi {
+            Button("Back to LAN   \(model.settings.hotKey.label)") { model.backToLAN() }
+        } else {
+            Button("Switch to Wi-Fi (safe unplug)   \(model.settings.hotKey.label)") { model.switchToWiFi() }
+                .disabled(!model.engine.wiredUp)
+        }
 
         Toggle("Auto-toggle Wi-Fi", isOn: Binding(
             get: { model.settings.autoEnabled },
@@ -267,7 +271,7 @@ public struct ConfigView: View {
                 Text("Switch to Wi-Fi")
             } footer: {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Before unplugging the LAN: turns Wi-Fi on, checks it reaches the internet, moves traffic to it (connection protection), then tells you it's safe to unplug.")
+                    Text("Before unplugging the LAN: turns Wi-Fi on, checks it reaches the internet, moves traffic to it (connection protection), then tells you it's safe to unplug. Changed your mind? Press it again (or Back to LAN in the menu) while still plugged in.")
                     Text("Global: works in every app and wins over the same keys inside apps (e.g. cmux). Needs ⌃, ⌥ or ⌘.")
                 }
             }
