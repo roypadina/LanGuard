@@ -147,10 +147,21 @@ public final class AppModel: ObservableObject {
     }
 
     /// "Switch to Wi-Fi" (menu + global shortcut): move traffic to Wi-Fi so the LAN can be unplugged.
+    /// Pressed again while switched (LAN still plugged in): back to LAN.
     public func switchToWiFi() {
         guard engine.wiredUp else { return }
+        if handover.switchedToWiFi { return backToLAN() }
         let wifi = InterfaceCatalog.wifi().map(\.bsdName).filter { settings.wifiEnabled($0) }
         handover.toWiFi(wifi, wired: engine.activeWired)
+    }
+
+    /// Undo a "Switch to Wi-Fi": protection moves back to the LAN, then (auto-toggle on) Wi-Fi goes
+    /// off the usual make-before-break way (Handover.toLAN).
+    public func backToLAN() {
+        Log.write("backToLAN")
+        handover.reset()
+        protection.reconcile()
+        if settings.autoEnabled { engine.reapply() }
     }
 
     // MARK: - View-facing helpers

@@ -16,9 +16,12 @@ public final class Handover: ObservableObject {
     @Published public private(set) var status: String?
 
     /// Set by "Switch to Wi-Fi": blocks the automatic LAN hand-over until the LAN is unplugged.
-    private var manualWiFi = false
+    @Published private var manualWiFi = false
     /// A "Switch to Wi-Fi" is in progress: repeat presses are ignored instead of restarting it.
-    private var switching = false
+    @Published private var switching = false
+
+    /// A finished "Switch to Wi-Fi" while the LAN is still plugged in: the menu and shortcut offer "Back to LAN".
+    public var switchedToWiFi: Bool { manualWiFi && !switching }
     private var task: Task<Void, Never>?
     private var popupOpen = false
     private let settings: AppSettings

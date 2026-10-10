@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-10-10
+
+### Added
+- **Back to LAN:** changed your mind after Switch to Wi-Fi? Press the shortcut again (or menu › Back to
+  LAN) while still plugged in — traffic moves back to the LAN, then Wi-Fi turns off as usual. Before,
+  traffic stayed on Wi-Fi until the LAN was unplugged and plugged back in.
+
+### Fixed
+- Unplugging the dock without Switch to Wi-Fi first could race the safety guardian against the address
+  move: the guardian removed protection at the same moment LanGuard moved it, which could drop
+  connections. A vanished adapter is now handled like any other link loss (the app moves the address
+  first), and the helper runs one action at a time.
+
 ## [1.1.2] - 2026-10-07
 
 ### Changed
