@@ -88,6 +88,28 @@ public final class Handover: ObservableObject {
             let iface = await self.protection.settle()
             try Task.checkCancellation()
             let moved = iface.map { wifi.contains($0) } ?? false
+            // Wi-Fi reaching the internet with its own address isn't enough: check through A, the address all
+            // traffic now uses (2026-10-11 office: everything dead after the move, gateway still answering).
+            if moved, let a = NetHelper.state()?["A"] {
+                var ok = false
+                for _ in 0..<3 where !ok {
+                    ok = await Task.detached { Net.internetVia(a) }.value
+                    if !ok { try await Task.sleep(for: .seconds(1)) }
+                }
+                try Task.checkCancellation()
+                if !ok {
+                    Log.write("toWiFi: no internet via \(a) on Wi-Fi → back to LAN")
+                    self.manualWiFi = false
+                    self.protection.preferWiFi = false
+                    _ = await self.protection.settle()
+                    try Task.checkCancellation()
+                    self.status = nil
+                    ProgressPanel.close()
+                    self.popup("Stayed on LAN", "Wi-Fi connected, but the internet didn't answer through it. "
+                        + "Traffic stays on the LAN — unplugging now would drop connections.")
+                    return
+                }
+            }
             self.status = moved ? "Safe to unplug LAN" : "Wi-Fi connected"
             ProgressPanel.close()
             self.popup(moved ? "Safe to unplug LAN" : "Wi-Fi connected",

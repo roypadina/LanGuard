@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.4] - 2026-10-11
+
+### Fixed
+- After Switch to Wi-Fi the internet could stop working through the stable address while the router still
+  answered; the safety guardian didn't notice. The guardian now also checks the internet through the stable
+  address (and removes protection within about 20 s if only it is cut off), and Switch to Wi-Fi checks the
+  internet through it before saying "Safe to unplug" — otherwise traffic stays on the LAN.
+- Internet checks gave up only after 75 s on a dead connection (macOS `nc -w` is not a connect timeout).
+
 ## [1.1.3] - 2026-10-10
 
 ### Added
