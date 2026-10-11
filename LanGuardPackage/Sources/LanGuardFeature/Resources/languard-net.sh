@@ -170,11 +170,14 @@ cmd_check() {
   [ -z "$why" ] && case "$(default_if)" in en[0-9]*) ;; *) why=vpn ;; esac
   [ -z "$why" ] && [ "$(holders "$A")" != "$ifc" ] && why=unhealthy
   if [ -z "$why" ]; then for n in $NETS; do [ "$(route_if "$n")" = "$ifc" ] || why=unhealthy; done; fi
-  if [ -z "$why" ] && ! ping -c1 -t1 -q -S "$A" "$gw" >/dev/null 2>&1; then
+  if [ -z "$why" ]; then
     plain=$(dhcp_ip "$ifc")
-    if ping -c1 -t1 -q -S "$plain" "$gw" >/dev/null 2>&1; then why=unhealthy        # gateway answers plain, not via A
-    elif ! nc -z -w2 -s "$A" 1.1.1.1 443 >/dev/null 2>&1 &&
-           nc -z -w2 -s "$plain" 1.1.1.1 443 >/dev/null 2>&1; then why=unhealthy   # ICMP-silent gateway: compare TCP
+    if ! ping -c1 -t1 -q -S "$A" "$gw" >/dev/null 2>&1 &&
+         ping -c1 -t1 -q -S "$plain" "$gw" >/dev/null 2>&1; then why=unhealthy      # gateway answers plain, not via A
+    # The gateway can answer A while the internet behind it doesn't (2026-10-11 office: all traffic dead
+    # 1.5 min, guardian saw a healthy gateway). Also covers an ICMP-silent gateway. Both dead = not ours.
+    elif ! nc -z -G2 -s "$A" 1.1.1.1 443 >/dev/null 2>&1 &&
+           nc -z -G2 -s "$plain" 1.1.1.1 443 >/dev/null 2>&1; then why=unhealthy; log "check: tcp via $A dead, $plain ok"
     fi
   fi
   if [ -z "$why" ]; then rm -f "$FAIL"; exit 0; fi

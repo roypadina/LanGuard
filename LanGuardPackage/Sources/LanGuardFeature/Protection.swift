@@ -316,6 +316,15 @@ enum Net {
         return int(s) == nil ? nil : s
     }
 
+    /// TCP to 1.1.1.1:443 from source address `a` (the /1 routes send it out the link A is on). Blocks ≤ 3 s (`-G` = connect timeout; `-w` is idle-only, a dead SYN waits 75 s).
+    static func internetVia(_ a: String) -> Bool {
+        let p = Process(); p.executableURL = URL(fileURLWithPath: "/usr/bin/nc")
+        p.arguments = ["-z", "-G3", "-s", a, "1.1.1.1", "443"]
+        p.standardOutput = FileHandle.nullDevice; p.standardError = FileHandle.nullDevice
+        do { try p.run() } catch { return false }
+        p.waitUntilExit(); return p.terminationStatus == 0
+    }
+
     private static func shell(_ path: String, _ args: [String]) -> String {
         let p = Process(); p.executableURL = URL(fileURLWithPath: path); p.arguments = args
         let pipe = Pipe(); p.standardOutput = pipe; p.standardError = Pipe()
