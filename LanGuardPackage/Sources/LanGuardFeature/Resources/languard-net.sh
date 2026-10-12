@@ -8,7 +8,8 @@
 # com.roypadina.languard-net every 3 s (`check`).
 #
 # SAFETY CONTRACT: the only things this script ever creates are one /32 alias on an en*
-# interface and the routes 0.0.0.0/1 + 128.0.0.0/1 via en*. `down` removes exactly those
+# interface, the routes 0.0.0.0/1 + 128.0.0.0/1 via en*, and the same two routes scoped (-ifscope) to
+# each OTHER en* on the same router. `down` removes exactly those (and any scoped en* /1)
 # (never a utun's /1, never a DHCP address, never the default route, DNS, service order or
 # Wi-Fi power). Everything it creates is non-persistent: a reboot clears it.
 #
@@ -49,7 +50,8 @@ mask()     { ipconfig getoption "$1" subnet_mask 2>/dev/null; }
 link_up()  { [ "$(ifconfig "$1" 2>/dev/null | awk '/status:/{print $2}')" = active ]; }
 # Interface of OUR exact /1 route, or empty. `route get -net` falls back to the default route when
 # the /1 is absent, so require mask 128.0.0.0 (gate-2 blocker #1).
-route_if() { route -n get -net "$1" 2>/dev/null | awk '$1=="mask:"{m=$2} $1=="interface:"{i=$2} END{if(m=="128.0.0.0")print i}'; }
+# Interface-scoped /1s (scope_others) don't count: an unscoped get can fall through to the primary's scoped ones.
+route_if() { route -n get -net "$1" 2>/dev/null | awk '$1=="mask:"{m=$2} $1=="interface:"{i=$2} $1=="flags:"&&/IFSCOPE/{s=1} END{if(m=="128.0.0.0"&&!s)print i}'; }
 default_if() { route -n get default 2>/dev/null | awk '$1=="interface:"{print $2}'; }
 holders()  { for i in $(ifconfig -l); do ifconfig "$i" | grep -q "inet $1 " && echo "$i"; done; }
 # State file: KEY=value lines; values were validated before being written. Parsed, never sourced.
@@ -75,7 +77,23 @@ down() {
       [ "$a" != "$pri" ] && { [ -z "$own" ] || [ "$a" = "$own" ]; } && ifconfig "$i" inet "$a" -alias
     done
   done
+  unscope
   rm -f "$STATE" "$FAIL"
+}
+
+# Sockets bound to ANOTHER en* (e.g. Tailscale's, on the primary interface) get "Network is unreachable"
+# while the /1 routes point elsewhere (2026-10-12: docked + A on Wi-Fi = Tailscale DNS SERVFAIL, every
+# name lookup dead until unplug). Each other en* on the same router gets its own /1s, scoped to it
+# (-ifscope: only sockets bound to that interface use them, with its own address).
+unscope() { local i n; for i in $(ifconfig -l | tr ' ' '\n' | grep -E '^en[0-9]+$'); do
+  for n in $NETS; do route -q -n delete -net "$n" -ifscope "$i" >/dev/null 2>&1; done; done; }
+scope_others() { # iface gw
+  local i n
+  unscope
+  for i in $(ifconfig -l | tr ' ' '\n' | grep -E '^en[0-9]+$'); do
+    [ "$i" != "$1" ] && link_up "$i" && [ "$(router "$i")" = "$2" ] || continue
+    for n in $NETS; do route -q -n add -net "$n" "$2" -ifscope "$i" >/dev/null 2>&1; done
+  done
 }
 
 # Add alias + both routes on iface; verify. Any failure -> down + exit 7.
@@ -96,6 +114,7 @@ attach() { # iface A gw
   ping -c1 -t1 -q -b "$1" -S "$2" "$3" >/dev/null 2>&1
   for n in $NETS; do [ "$(route_if "$n")" = "$1" ] || { log "verify failed ($n)"; down; exit 7; }; done
   [ "$(holders "$2")" = "$1" ] || { log "verify failed (alias)"; down; exit 7; }
+  scope_others "$1" "$3"
   [ -f "$PANIC" ] && { down sweep; exit 4; }                                     # panic landed while we worked
 }
 
