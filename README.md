@@ -163,7 +163,8 @@ full component map.
 Optional (Settings → Connection protection, off by default). LanGuard keeps a stable address that moves
 between LAN and Wi-Fi, so connections (agents, VPNs, downloads) survive plugging/unplugging the cable.
 It only applies on networks where LAN and Wi-Fi share a router. Everything it changes is one extra
-address plus two routes (`0.0.0.0/1`, `128.0.0.0/1`) — nothing persistent; a reboot clears it.
+address plus two routes (`0.0.0.0/1`, `128.0.0.0/1`), and copies of those two routes limited to the other
+connection (so apps bound to it, e.g. Tailscale, keep working) — nothing persistent; a reboot clears it.
 A root guardian checks every ~3 s and removes everything when the network looks wrong.
 Limits: IPv4 only; needs DHCP on both LAN and Wi-Fi; don't combine with a full-tunnel VPN ("send all
 traffic", e.g. OpenVPN `redirect-gateway`) — split-tunnel VPNs (Pritunl profiles with routes, Tailscale) work.

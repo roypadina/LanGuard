@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.5] - 2026-10-12
+
+### Fixed
+- After Switch to Wi-Fi, while the LAN was still plugged in, websites stopped loading ("server IP address
+  could not be found") until the LAN was unplugged. Apps that stick to the wired connection — Tailscale,
+  which answers all DNS when "Use Tailscale DNS" is on — couldn't reach anything. They now keep a route
+  through their own connection.
+
 ## [1.1.4] - 2026-10-11
 
 ### Fixed
