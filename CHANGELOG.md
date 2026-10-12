@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.6] - 2026-10-12
+
+### Fixed
+- 1.1.5: moving traffic between LAN and Wi-Fi while both were connected failed its own check and briefly
+  switched protection off (popup "Protection is off on this network"), which could drop connections.
+
 ## [1.1.5] - 2026-10-12
 
 ### Fixed

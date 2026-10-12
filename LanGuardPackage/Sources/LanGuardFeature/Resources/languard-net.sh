@@ -67,6 +67,7 @@ lg_alive() { is_pid "$1" && ps -o comm= -p "$1" 2>/dev/null | grep -q LanGuard; 
 down() {
   local n i pri a own=""
   [ "${1:-}" = sweep ] || own=$(state A)
+  unscope                       # first: with a scoped /1 on our iface, `route get` reports it, not ours
   for n in $NETS; do
     i=$(route_if "$n")
     case "$i" in en[0-9]*) route -q -n delete -net "$n" >/dev/null 2>&1 ;; esac   # never a utun's /1
@@ -77,7 +78,6 @@ down() {
       [ "$a" != "$pri" ] && { [ -z "$own" ] || [ "$a" = "$own" ]; } && ifconfig "$i" inet "$a" -alias
     done
   done
-  unscope
   rm -f "$STATE" "$FAIL"
 }
 
@@ -100,6 +100,7 @@ scope_others() { # iface gw
 attach() { # iface A gw
   local n
   for n in $NETS; do case "$(route_if "$n")" in ""|en[0-9]*) ;; *) down; exit 3 ;; esac; done   # a VPN's /1: never repoint it
+  unscope       # a scoped /1 on this iface would shadow ours in `route get` → verify fails (1.1.5, 2026-10-12)
   ifconfig "$1" inet "$2" netmask 255.255.255.255 alias 2>/dev/null
   for n in $NETS; do
     # Never `route change`: on a missing /1 (e.g. a concurrent teardown) it edits the DEFAULT route.
