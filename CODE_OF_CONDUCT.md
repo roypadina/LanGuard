@@ -32,7 +32,7 @@ Examples of unacceptable behavior:
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the
-maintainer at **roypadina@gmail.com**. All complaints will be reviewed and investigated
+maintainer via a [GitHub private vulnerability report](https://github.com/roypadina/LanGuard/security/advisories/new) or an issue. All complaints will be reviewed and investigated
 promptly and fairly.
 
 ## Attribution
