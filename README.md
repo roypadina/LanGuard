@@ -185,8 +185,8 @@ on the same router (or tick "Protect this network").
 
 **Panic — restore normal networking**, from easiest:
 1. Menu bar → **⚠︎ Restore normal networking (panic)**.
-2. Raycast script **LanGuard Panic** (works even if LanGuard is hung; asks for your password if needed).
-3. Terminal, without LanGuard or its helper: run `sudo -s`, then paste:
+2. Terminal, works even if LanGuard is hung (asks for your password): `sudo /Library/PrivilegedHelperTools/languard-net panic`, or run [`Scripts/languard-panic.sh`](Scripts/languard-panic.sh) from a clone of this repo (it falls back to the one-liner below if the helper is missing). You can bind that script in Raycast as a Script Command; its header is ready.
+3. Without LanGuard or its helper: run `sudo -s`, then paste:
    ```sh
    for n in 0.0.0.0/1 128.0.0.0/1; do i=$(route -n get -net $n 2>/dev/null | awk '$1=="interface:"{print $2}'); case $i in en[0-9]*) route -q -n delete -net $n;; esac; done; for i in $(ifconfig -l | tr ' ' '\n' | grep -E '^en[0-9]+$'); do p=$(ipconfig getifaddr $i); ifconfig $i | awk '/inet .* netmask 0xffffffff/{print $2}' | while read a; do [ "$a" != "$p" ] && ifconfig $i inet $a -alias; done; done; rm -f /var/run/languard-net.state; touch /var/run/languard-net.panic
    ```
