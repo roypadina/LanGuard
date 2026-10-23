@@ -53,7 +53,10 @@ Sets network service order instead of powering Wi-Fi off, for users who
 want Wi-Fi to stay available as a fallback.
 ```
 
-## Reporting bugs / requesting features
+## Feature requests and bugs
 
-Use the [issue templates](https://github.com/roypadina/LanGuard/issues/new/choose).
-Include your macOS version and the relevant interface names (`networksetup -listallhardwareports`).
+- **Feature requests:** [open one](https://github.com/roypadina/LanGuard/issues/new?template=feature_request.yml) and say what you're trying to do; that matters more than the exact feature. Search the [open requests](https://github.com/roypadina/LanGuard/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement) first and 👍 an existing one if it's there.
+- **Bugs:** use the [bug report](https://github.com/roypadina/LanGuard/issues/new?template=bug_report.yml). Include your macOS version and the relevant interface names (`networksetup -listallhardwareports`).
+- **Ko-fi supporters:** add your Ko-fi name to the request and it goes to the front of my queue. It's a thank-you, not a purchase: no promise on what ships or when.
+- **Bigger changes:** open an issue before the PR so we agree on the shape first. Small, focused PRs can come straight in.
+- Replies are best effort, evenings and weekends. I read everything.
