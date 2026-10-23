@@ -109,7 +109,7 @@ public final class Protection: ObservableObject {
             self.queue.async { self.expectingState = false }
             self.publish(ok ? "Off — panic. Normal networking restored." : "Panic FAILED — reboot restores networking", nil)
             Notifier.post(title: ok ? "LanGuard protection off" : "LanGuard panic failed",
-                          body: ok ? "Normal networking restored (panic)." : "Use the Raycast script, the README one-liner, or reboot.")
+                          body: ok ? "Normal networking restored (panic)." : "In Terminal run: sudo /Library/PrivilegedHelperTools/languard-net panic (or see the README Panic section), or reboot.")
         }
     }
 

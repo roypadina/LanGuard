@@ -337,7 +337,7 @@ public struct ConfigView: View {
             }
 
             Section("Panic") {
-                Text("Menu → \"Restore normal networking\", the Raycast script \"LanGuard Panic\", or reboot. Without LanGuard: in Terminal run `sudo -s`, then paste the one-liner from the README (section \"Panic\").")
+                Text("Menu → \"Restore normal networking\", or in Terminal: sudo /Library/PrivilegedHelperTools/languard-net panic. Without the helper: run `sudo -s`, then paste the one-liner from the README (section \"Panic\"). Or reboot.")
             }
         }
     }
