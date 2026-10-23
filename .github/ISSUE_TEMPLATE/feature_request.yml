@@ -5,17 +5,29 @@ body:
   - type: textarea
     id: problem
     attributes:
-      label: Problem / motivation
-      description: What are you trying to do that LanGuard doesn't support today?
+      label: What are you trying to do?
+      description: The situation where LanGuard gets in the way or falls short. This matters more than the exact feature.
     validations:
       required: true
   - type: textarea
     id: proposal
     attributes:
-      label: Proposed solution
+      label: What would you like LanGuard to do?
     validations:
       required: true
   - type: textarea
     id: alternatives
     attributes:
-      label: Alternatives considered
+      label: Workarounds or alternatives you've tried
+  - type: input
+    id: kofi
+    attributes:
+      label: Ko-fi supporter? (optional)
+      description: Your Ko-fi name, if you've tipped. Supporter requests go to the front of the queue. It's a thank-you, not a purchase, so no promise on what ships or when. This field is public; skip it if you'd rather not say.
+      placeholder: Ko-fi name
+  - type: checkboxes
+    id: pr
+    attributes:
+      label: Would you build it?
+      options:
+        - label: I'd be up for sending a pull request for this.

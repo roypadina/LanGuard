@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.9] - 2026-10-23
+
+### Added
+- About: request a feature / contribute. Two buttons open the feature-request form and CONTRIBUTING.md; Ko-fi supporters' requests go to the front of the queue.
+
 ## [1.1.8] - 2026-10-23
 
 ### Changed
