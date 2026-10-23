@@ -143,11 +143,11 @@ public struct ConfigView: View {
     @ObservedObject private var recorder = ShortcutRecorder.shared
     @State private var loginOn: Bool = LoginItem.isEnabled
     @State private var tick: Int = 0
-    @State private var pane: Pane = .general
+    @State private var pane: Pane
 
     /// Explicit in-window tab bar: on macOS 26+ a native `TabView` moves its tabs into the title-bar
     /// toolbar as icon-only buttons that collapse behind a ">>" overflow — tabs become invisible.
-    private enum Pane: String, CaseIterable, Identifiable {
+    enum Pane: String, CaseIterable, Identifiable {
         case general = "General", interfaces = "Interfaces", switching = "Switching",
              protection = "Protection", about = "About"
         var id: Self { self }
@@ -155,7 +155,10 @@ public struct ConfigView: View {
 
     private let refresh = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
-    public init(model: AppModel) { self.model = model }
+    public init(model: AppModel) { self.model = model; _pane = State(initialValue: .general) }
+
+    /// Dev-only (screenshot rendering): open on a given tab.
+    init(model: AppModel, pane: Pane) { self.model = model; _pane = State(initialValue: pane) }
 
     private var wired: [NetInterface] { InterfaceCatalog.wired() }
     private var wifi: [NetInterface] { InterfaceCatalog.wifi() }

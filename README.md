@@ -7,9 +7,14 @@
 ### Wi-Fi off when you're wired. Back on when you're not.
 
 A tiny native macOS menu-bar app that turns **Wi-Fi off the moment a wired LAN link goes up**,
-and back **on when you unplug** — edge-based, wake-aware, per-interface, and no admin rights required.
+and back **on when you unplug** — edge-based, wake-aware, per-interface, and **no admin rights needed** by default (the optional Connection Protection installs a root helper — see below).
+
+```bash
+brew install --cask roypadina/tap/languard
+```
 
 [![macOS](https://img.shields.io/badge/macOS-14%2B-000000?logo=apple&logoColor=white)](https://www.apple.com/macos/)
+[![Universal](https://img.shields.io/badge/Apple%20Silicon%20%2B%20Intel-universal-555555?logo=apple&logoColor=white)](#requirements)
 [![Swift](https://img.shields.io/badge/Swift-5-F05138?logo=swift&logoColor=white)](https://swift.org)
 [![Homebrew](https://img.shields.io/badge/brew-roypadina%2Ftap-FBB040?logo=homebrew&logoColor=white)](https://github.com/roypadina/homebrew-tap)
 [![Release](https://img.shields.io/github/v/release/roypadina/LanGuard?logo=github&label=release)](https://github.com/roypadina/LanGuard/releases/latest)
@@ -67,13 +72,15 @@ manually flip Wi-Fi back on while docked, it stays on until you next unplug.
 | 🧭 **Configurable indicator** | Menu-bar shows `LAN` / `Wi-Fi` / `Off` — icon only, icon + label, or label only. |
 | ⏸️ **Master switch** | Pause all automatic toggling from the menu. |
 | 🚀 **Start at login** | Self-healing login item — re-registers if the app moves; prompts if macOS needs approval. |
-| 🔐 **No admin, no sudo** | Wi-Fi power via CoreWLAN, link state via SystemConfiguration. No network calls of its own. |
+| 🔐 **No admin by default** | Wi-Fi power via CoreWLAN, link state via SystemConfiguration, no network calls of its own. Only the optional Connection Protection installs a root helper (one admin prompt). |
 
 > **Menu-bar indicator** (icon + label style):
 >
 > ![LanGuard menu-bar indicator showing "LAN" while a wired link is active](docs/screenshots/menubar.png)
 >
-> _An open-menu screenshot is still welcome — see [#1](https://github.com/roypadina/LanGuard/issues/1)._
+> **Settings → Interfaces** — pick which wired adapters trigger and which Wi-Fi adapters are controlled:
+>
+> ![LanGuard Settings, Interfaces tab: a list of wired adapters with a green dot on the active one, and the controlled Wi-Fi adapter](docs/screenshots/settings-interfaces.png)
 
 ## How LanGuard compares
 
@@ -84,13 +91,15 @@ manually flip Wi-Fi back on while docked, it stays on until you next unplug.
 | Per-interface selection | ✅ | ✅ | ❌ |
 | Edge-based (respects manual toggle) | ✅ | — | — |
 | Wake-from-sleep handling | ✅ | — | not documented |
-| No admin / sudo | ✅ | — | ❌ (needs admin) |
+| No admin / sudo (core feature) | ✅ | — | ❌ (needs admin) |
 
 <sub>Comparison based on each project's public docs at time of writing; verify current details on their sites. LanGuard is **not** notarized (ad-hoc signed) — see [Is it safe?](#is-it-safe).</sub>
 
 ## Install
 
-> **Requires macOS 14+ (Sonoma).**
+## Requirements
+
+macOS 14 Sonoma or later · Apple Silicon and Intel (universal binary)
 
 ### Homebrew
 
@@ -98,8 +107,9 @@ manually flip Wi-Fi back on while docked, it stays on until you next unplug.
 brew install --cask roypadina/tap/languard
 ```
 
-> LanGuard is ad-hoc signed (not notarized). On first launch, **right-click it in
-> `/Applications` → Open** (then Open again), or run once:
+> LanGuard is ad-hoc signed (not notarized). On first launch macOS blocks it: open **System Settings →
+> Privacy & Security**, scroll down and click **Open Anyway** (right-click → Open no longer works on macOS 15+).
+> Or clear the quarantine flag once:
 > ```bash
 > xattr -dr com.apple.quarantine "/Applications/LanGuard.app"
 > ```
@@ -127,7 +137,7 @@ In **Settings** you can:
 - choose which **Wi-Fi adapters** are controlled,
 - toggle each **notification** (Wi-Fi off / Wi-Fi back on banners, progress window, "safe to unplug" popup),
 - record the **Switch to Wi-Fi shortcut**,
-- allow **moving traffic before unplug** (one admin prompt installs a sudo rule limited to `networksetup -ordernetworkservices`),
+- turn on optional **connection protection** (one admin prompt installs a root helper, see below),
 - pick the **menu-bar icon style** (icon / icon + label / label),
 - enable **Start at login**.
 
@@ -198,10 +208,10 @@ Fair question — it toggles your network and launches at login. Here's the hone
   networking APIs (CoreWLAN, SystemConfiguration). The only external tools it ever runs are
   read-only `ifconfig` (a link-state fallback) and a one-time `launchctl` to remove the legacy
   LaunchAgent — never `networksetup`, never with elevated privileges.
-- **No admin / sudo.** It never asks for your password or installs a privileged helper (unless you enable the optional connection protection, which installs the root helper described above).
+- **No admin by default.** The core Wi-Fi toggle never asks for your password. Only the optional connection protection installs a root helper (a shell script, so it runs on Apple Silicon and Intel alike), a LaunchDaemon guardian and a sudo rule for that helper alone. Panic and uninstall remove all of it.
 - **Ad-hoc signed, _not_ notarized.** That's the one rough edge: macOS can't verify the
-  developer, so the first launch is blocked until you **right-click → Open** (or clear
-  quarantine with the `xattr` command above). Notarization needs a paid Apple Developer ID;
+  developer, so the first launch is blocked until you click **Open Anyway** in System Settings → Privacy & Security
+  (or clear quarantine with the `xattr` command above). Notarization needs a paid Apple Developer ID;
   it's on the roadmap. If you'd rather not trust a prebuilt binary, **build from source**.
 - Each release ships a **SHA-256** for the download so you can verify it.
 
@@ -223,11 +233,11 @@ Virtual adapters (VPN tunnels, VMware/Parallels `vmnet`, bridges) are off by def
 can't be mistaken for a real wired link. You can opt any of them in under Settings.
 
 **Does it need admin rights?**
-No. Wi-Fi power goes through CoreWLAN and link state through SystemConfiguration, both as your
-normal user.
+Not for the core feature: Wi-Fi power goes through CoreWLAN and link state through SystemConfiguration,
+both as your normal user. Only the optional connection protection installs a root helper (one admin prompt).
 
 **macOS says it "can't verify the developer."**
-It's not notarized yet — right-click the app → Open, or run the `xattr` command in
+It's not notarized yet — click **Open Anyway** in System Settings → Privacy & Security, or run the `xattr` command in
 [Install](#install). See [Is it safe?](#is-it-safe).
 
 ## Uninstall

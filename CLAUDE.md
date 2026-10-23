@@ -45,6 +45,8 @@ cd LanGuardPackage && swift test
 # install
 rm -rf /Applications/LanGuard.app && ditto "$(built .app)" /Applications/LanGuard.app   # replace, never merge: ditto over an old .app leaves stale files → "sealed resource is missing"; not cp -R (nests)
 ```
+Release build (universal arm64 + x86_64; needs the generic destination, otherwise only the host arch is built):
+`xcodebuild -workspace LanGuard.xcworkspace -scheme LanGuard -configuration Release -destination 'generic/platform=macOS' -derivedDataPath /tmp/lg-dd build`, then `lipo -archs` the binary. README screenshot: `RENDER_SCREENSHOTS=$PWD/docs/screenshots swift test --filter ScreenshotRenderTests` (in `LanGuardPackage`).
 Min macOS 14. Swift 5 language mode (avoids Swift 6 strict-concurrency friction).
 
 ## Login item (self-healing)

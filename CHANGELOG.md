@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.7] - 2026-10-23
+
+### Changed
+- Universal build: now runs on Intel Macs as well as Apple Silicon (the root helper is a shell script, so it is universal too).
+- README: "no admin" now says what it means (none by default; the optional Connection Protection installs a root helper), Open Anyway first-launch steps for macOS 15+, Requirements block, Settings screenshot.
+- Public repo hygiene: SECURITY/Code of Conduct point to GitHub private vulnerability reporting.
+
 ## [1.1.6] - 2026-10-12
 
 ### Fixed
