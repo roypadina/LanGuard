@@ -7,12 +7,12 @@
     <key>ProgramArguments</key>
     <array>
         <string>/Library/PrivilegedHelperTools/languard-net</string>
-        <string>check</string>
+        <string>guard</string>
     </array>
-    <key>StartInterval</key>
-    <integer>3</integer>
-    <key>ThrottleInterval</key>
-    <integer>1</integer>
+    <key>KeepAlive</key>
+    <true/>
+    <key>AbandonProcessGroup</key>
+    <true/>
     <key>RunAtLoad</key>
     <true/>
 </dict>

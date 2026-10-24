@@ -5,7 +5,7 @@
 #
 # Installed root:wheel 0755 at /Library/PrivilegedHelperTools/languard-net, run via
 # `sudo -n` (sudoers grants exactly this path) and by the LaunchDaemon
-# com.roypadina.languard-net every 3 s (`check`).
+# com.roypadina.languard-net (`guard`: one long-lived loop that runs `check` every 3 s).
 #
 # SAFETY CONTRACT: the only things this script ever creates are one /32 alias on an en*
 # interface, the routes 0.0.0.0/1 + 128.0.0.0/1 via en*, and the same two routes scoped (-ifscope) to
@@ -13,7 +13,7 @@
 # (never a utun's /1, never a DHCP address, never the default route, DNS, service order or
 # Wi-Fi power). Everything it creates is non-persistent: a reboot clears it.
 #
-# Verbs: up <iface> <A> <pid> | move <iface> | adopt <pid> | down | panic | arm | check | status
+# Verbs: up <iface> <A> <pid> | move <iface> | adopt <pid> | down | panic | arm | check | guard | status
 #        netinfo <iface>   (read-only: router IP + MAC on iface; root sees ARP despite Local Network privacy)
 # Exit codes: 0 ok, 2 bad args, 3 route/VPN conflict, 4 panic set, 5 other instance,
 #             6 address taken, 7 verify failed (rolled back), 8 no state, 9 guardian not running,
@@ -236,6 +236,10 @@ case "${1:-}" in
   panic)  down sweep; touch "$PANIC"; log "panic" ;;
   arm)    rm -f "$PANIC" "$REASON" ;;
   check)  cmd_check ;;
+  # LaunchDaemon entry: one long-lived job, `check` (locked, own process) every 3 s start-to-start.
+  # A 3 s StartInterval respawned the job ~28,800x/day; with Login Items settings open that flood panicked launchd (2026-10-24).
+  guard)  [ "$PPID" = 1 ] || exit 2                                              # launchd only: a 2nd loop doubles strike speed
+          while :; do sleep 3 & "$0" check; wait; done ;;
   netinfo) shift; [ $# -eq 1 ] && is_iface "$1" || exit 2
           g=$(router "$1"); is_ip "$g" || exit 8
           [ -n "$(gw_mac "$g")" ] || ping -c1 -t1 -q -b "$1" "$g" >/dev/null 2>&1

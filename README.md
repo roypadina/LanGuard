@@ -176,7 +176,8 @@ between LAN and Wi-Fi, so connections (agents, VPNs, downloads) survive plugging
 It only applies on networks where LAN and Wi-Fi share a router. Everything it changes is one extra
 address plus two routes (`0.0.0.0/1`, `128.0.0.0/1`), and copies of those two routes limited to the other
 connection (so apps bound to it, e.g. Tailscale, keep working) — nothing persistent; a reboot clears it.
-A root guardian checks every ~3 s and removes everything when the network looks wrong.
+A root guardian checks every ~3 s and removes everything when the network looks wrong. When an update
+changes the helper, the status reads "helper update needed": click Settings → Connection protection → **Update helper…**.
 Limits: IPv4 only; needs DHCP on both LAN and Wi-Fi; don't combine with a full-tunnel VPN ("send all
 traffic", e.g. OpenVPN `redirect-gateway`) — split-tunnel VPNs (Pritunl profiles with routes, Tailscale) work.
 Pulling a whole dock removes its network adapter: VPN clients tied to it (e.g. Pritunl/OpenVPN) may
