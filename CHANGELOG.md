@@ -118,6 +118,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - About section in Settings, "About LanGuard" and "Support on Ko-fi" menu items.
 
+## [1.0.2] - 2026-09-22
+
+### Added
+- App icon (blue shield with a plug emblem). The app previously shipped without one.
+
 ## [1.0.1] - 2026-06-09
 
 ### Fixed
