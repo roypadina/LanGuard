@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.10] - 2026-10-24
+
+### Fixed
+- Connection protection: the guardian is now one long-running process that checks every 3 s, instead of a LaunchDaemon that macOS started and stopped every 3 s. On macOS 27, that constant start/stop, with System Settings left open on Login Items, could crash `launchd` and kernel-panic the Mac.
+
+### Changed
+- When the installed helper is older than the app, the protection status says "helper update needed". Click Settings › Protection › **Update helper…** (admin password once) to switch to the new guardian.
+
 ## [1.1.9] - 2026-10-23
 
 ### Added

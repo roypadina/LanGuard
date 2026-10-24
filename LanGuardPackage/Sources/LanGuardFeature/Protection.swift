@@ -241,6 +241,8 @@ public final class Protection: ObservableObject {
 
     private func publish(_ text: String, _ iface: String?) {
         shownOn = text.hasPrefix("On")
+        // An old helper keeps the 3 s StartInterval daemon that panicked launchd (2026-10-24): make the update visible.
+        let text = NetHelper.outdated ? text + " — helper update needed: Settings › Protection" : text
         DispatchQueue.main.async { self.status = text; self.activeIface = iface }
     }
 

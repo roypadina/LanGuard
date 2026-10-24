@@ -9,8 +9,8 @@
 PRODUCT_NAME = LanGuard
 PRODUCT_DISPLAY_NAME = LanGuard
 PRODUCT_BUNDLE_IDENTIFIER = com.roy.languard
-MARKETING_VERSION = 1.1.9
-CURRENT_PROJECT_VERSION = 15
+MARKETING_VERSION = 1.1.10
+CURRENT_PROJECT_VERSION = 16
 
 // ==========================================
 // Platform Configuration
