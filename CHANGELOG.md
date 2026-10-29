@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-30
+
 ### Added
 - A welcome window on first launch (and once after this update): what LanGuard does, where the icon is, what to do if it is hidden, and an Open at Login switch. Re-open it from Settings › About › **Welcome Guide…**.
 - Opening LanGuard again from Applications, Finder or Raycast now opens Settings, so a hidden menu-bar icon no longer locks you out.

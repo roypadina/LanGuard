@@ -126,12 +126,12 @@ cp -R ~/Library/Developer/Xcode/DerivedData/LanGuard-*/Build/Products/Release/La
 open /Applications/LanGuard.app
 ```
 
-The app lives in the menu bar (no Dock icon). On first launch, click **Allow** on the
+The app lives in the menu bar (no Dock icon, except while Settings, About or Welcome is open). On first launch a Welcome window explains it; click **Allow** on the
 notification prompt if you want toggle banners.
 
 ## Usage
 
-Click the menu-bar icon for status, the **Auto-toggle** master switch, and **Settings…**.
+Click the menu-bar icon for status, the **Auto-Toggle Wi-Fi** master switch, and **Settings…**.
 
 In **Settings** you can:
 - choose which **wired adapters** count as triggers (real adapters on by default, virtual off),
@@ -194,7 +194,7 @@ on the same router (or tick "Protect this network").
    ```
 4. Reboot.
 
-Re-enable afterwards from the menu (**Re-enable connection protection**).
+Re-enable afterwards from the menu (**Re-Enable Connection Protection**).
 
 Quitting LanGuard does **not** turn protection off (so a quit, update or relaunch doesn't cut your
 connections): the guardian keeps watching and the next launch takes over. While LanGuard is quit, an
