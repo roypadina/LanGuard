@@ -12,9 +12,14 @@ public struct MenuContent: View {
     public var body: some View {
         // Always first and always enabled while the helper exists: one click back to normal networking.
         if NetHelper.installed || NetHelper.state() != nil {
-            Button("⚠︎ Restore normal networking (panic)") { model.protection.panic() }
+            Button {
+                model.protection.panic()
+            } label: {
+                Label("Restore Normal Networking (Panic)", systemImage: "exclamationmark.triangle")
+                    .labelStyle(.titleAndIcon)
+            }
             if NetHelper.panicked {
-                Button("Re-enable connection protection") { model.protection.rearm() }
+                Button("Re-Enable Connection Protection") { model.protection.rearm() }
             }
             Divider()
         }
@@ -28,11 +33,11 @@ public struct MenuContent: View {
         if model.handover.switchedToWiFi {
             Button("Back to LAN   \(model.settings.hotKey.label)") { model.backToLAN() }
         } else {
-            Button("Switch to Wi-Fi (safe unplug)   \(model.settings.hotKey.label)") { model.switchToWiFi() }
+            Button("Switch to Wi-Fi (Safe Unplug)   \(model.settings.hotKey.label)") { model.switchToWiFi() }
                 .disabled(!model.engine.wiredUp)
         }
 
-        Toggle("Auto-toggle Wi-Fi", isOn: Binding(
+        Toggle("Auto-Toggle Wi-Fi", isOn: Binding(
             get: { model.settings.autoEnabled },
             set: { model.setAuto($0) }
         ))
@@ -219,7 +224,7 @@ public struct ConfigView: View {
     private var general: some View {
         Form {
             Section {
-                Toggle("Auto-toggle enabled", isOn: Binding(
+                Toggle("Auto-toggle Wi-Fi", isOn: Binding(
                     get: { model.settings.autoEnabled },
                     set: { model.setAuto($0) }
                 ))
@@ -247,6 +252,7 @@ public struct ConfigView: View {
             section(
                 title: "Wired triggers",
                 subtitle: "Wi-Fi turns off when any checked wired link is active. Virtual adapters (bridge/VPN/VM) are off by default.",
+                empty: "No wired adapters found. Plug in Ethernet or a dock.",
                 interfaces: wired,
                 isActive: { model.linkActive($0.bsdName) },
                 words: ("Link up", "Link down"),
@@ -260,6 +266,7 @@ public struct ConfigView: View {
             section(
                 title: "Controlled Wi-Fi",
                 subtitle: "These adapters get switched on/off.",
+                empty: "No Wi-Fi adapter found.",
                 interfaces: wifi,
                 isActive: { model.wifiPoweredOn($0.bsdName) },
                 words: ("On", "Off"),
@@ -304,19 +311,19 @@ public struct ConfigView: View {
             }
 
             Section("Notifications") {
-                Toggle("LAN connected: \"Wi-Fi off, traffic on LAN\" banner", isOn: Binding(
+                Toggle("Banner when Wi-Fi turns off", isOn: Binding(
                     get: { model.settings.notifyMovedToLAN },
                     set: { model.settings.notifyMovedToLAN = $0 }
                 ))
-                Toggle("LAN unplugged: \"Wi-Fi back on\" banner", isOn: Binding(
+                Toggle("Banner when Wi-Fi turns back on", isOn: Binding(
                     get: { model.settings.notificationsEnabled },
                     set: { model.settings.notificationsEnabled = $0 }
                 ))
-                Toggle("Switch to Wi-Fi: progress window (closes itself when ready)", isOn: Binding(
+                Toggle("Progress window while switching", isOn: Binding(
                     get: { model.settings.switchProgressPopup },
                     set: { model.settings.switchProgressPopup = $0 }
                 ))
-                Toggle("Switch to Wi-Fi: \"Safe to unplug LAN\" popup", isOn: Binding(
+                Toggle("“Safe to unplug” alert", isOn: Binding(
                     get: { model.settings.safeToUnplugPopup },
                     set: { model.settings.safeToUnplugPopup = $0 }
                 ))
@@ -360,8 +367,12 @@ public struct ConfigView: View {
             }
 
             Section("Panic") {
-                Text("Menu → \"Restore normal networking\", or in Terminal: sudo /Library/PrivilegedHelperTools/languard-net panic. Without the helper: run `sudo -s`, then paste the one-liner from the README (section \"Panic\"). Or reboot.")
+                Text("In the menu: Restore Normal Networking (Panic).")
+                Text("In Terminal: sudo \(NetHelper.helperPath) panic")
+                Text("Without the helper: run `sudo -s`, then paste the one-liner from the README (section “Panic”).")
+                Text("Or restart the Mac.")
             }
+            .textSelection(.enabled)
         }
     }
 
@@ -407,6 +418,7 @@ public struct ConfigView: View {
     private func section(
         title: String,
         subtitle: String,
+        empty: String,
         interfaces: [NetInterface],
         isActive: @escaping (NetInterface) -> Bool,
         words: (active: String, inactive: String),
@@ -415,7 +427,7 @@ public struct ConfigView: View {
     ) -> some View {
         Section {
             if interfaces.isEmpty {
-                Text("No interfaces found.").foregroundStyle(.secondary)
+                Text(empty).foregroundStyle(.secondary)
             } else {
                 ForEach(interfaces) { iface in
                     let active = isActive(iface) // one read per row: it can shell out to ifconfig
