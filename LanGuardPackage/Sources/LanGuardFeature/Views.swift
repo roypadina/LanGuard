@@ -165,7 +165,6 @@ struct AboutView: View {
 public struct ConfigView: View {
     @ObservedObject var model: AppModel
     @ObservedObject private var recorder = ShortcutRecorder.shared
-    @State private var loginOn: Bool = LoginItem.isEnabled
     @State private var tick: Int = 0
     @State private var pane: Pane
 
@@ -213,7 +212,6 @@ public struct ConfigView: View {
         // Every 2 s the body re-evaluates (helper/login/hot-key state, status texts, link dots);
         // `let _ = tick` ties it to the timer without giving rows a new identity (keeps focus).
         .onReceive(refresh) { _ in tick &+= 1 }
-        .onAppear { loginOn = LoginItem.isEnabled }
     }
 
     // MARK: General
@@ -225,15 +223,7 @@ public struct ConfigView: View {
                     get: { model.settings.autoEnabled },
                     set: { model.setAuto($0) }
                 ))
-                Toggle("Start at login", isOn: $loginOn)
-                    .onChange(of: loginOn) { _, newValue in
-                        LoginItem.setEnabled(newValue)
-                        if newValue { LoginItem.promptForApprovalIfNeeded() }
-                        loginOn = LoginItem.isEnabled
-                    }
-            } footer: {
-                Text("Login item: \(LoginItem.statusDescription)")
-                    .foregroundStyle(LoginItem.status == .requiresApproval ? Color.orange : .secondary)
+                LaunchAtLoginToggle()
             }
 
             Section {
@@ -290,7 +280,12 @@ public struct ConfigView: View {
                 LabeledContent("Shortcut") {
                     HStack {
                         if HotKey.inUse {
-                            Text("Used by another app — record another").font(.caption).foregroundStyle(.orange)
+                            Label {
+                                Text("Used by another app. Record another.").foregroundStyle(.secondary)
+                            } icon: {
+                                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                            }
+                            .font(.callout)
                         }
                         Button(recorder.recording ? "Press keys… (Esc cancels)" : model.settings.hotKey.label) {
                             recorder.toggle(current: model.settings.hotKey, save: model.setHotKey)

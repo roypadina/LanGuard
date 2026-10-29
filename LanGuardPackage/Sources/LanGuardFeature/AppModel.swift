@@ -106,14 +106,10 @@ public final class AppModel: ObservableObject {
         LegacyCleanup.run()
         Notifier.requestAuthorization()
 
-        // Auto-register the login item for the current bundle path every launch.
-        // Self-heals after a move; prompts the user if macOS needs approval.
-        switch LoginItem.ensureRegistered() {
-        case .reRegisterMoved:
-            LoginItem.notifyReRegisteredAfterMove()
-        case .register, .none:
-            LoginItem.promptForApprovalIfNeeded()
-        }
+        // Self-heal an enabled login item (moved bundle / lost registration). No launch-time alerts:
+        // opting in and approving it in System Settings happen in `LaunchAtLoginToggle`.
+        let login = LoginItem.ensureRegistered()
+        if login != .none { Log.write("login item \(login) from \(Bundle.main.bundlePath)") }
 
         monitor.onChange = { [weak self] in self?.evaluate() }
         monitor.start()
