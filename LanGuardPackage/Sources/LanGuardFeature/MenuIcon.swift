@@ -27,6 +27,15 @@ public enum MenuState: Equatable, Sendable {
         case .paused: return "Off"
         }
     }
+
+    /// What VoiceOver reads for the status item (the symbol name carries neither app nor state).
+    public var accessibilityName: String {
+        switch self {
+        case .lan:    return "LanGuard, LAN"
+        case .wifi:   return "LanGuard, Wi-Fi"
+        case .paused: return "LanGuard, paused"
+        }
+    }
 }
 
 /// User-selectable menu-bar appearance.
@@ -56,13 +65,16 @@ public struct MenuBarLabel: View {
         switch model.settings.menuIconStyle {
         case .symbol:
             Image(systemName: state.symbol)
+                .accessibilityLabel(state.accessibilityName)
         case .symbolWithLabel:
             HStack(spacing: 3) {
                 Image(systemName: state.symbol)
                 Text(state.label)
             }
+            .accessibilityLabel(state.accessibilityName)
         case .label:
             Text(state.label)
+                .accessibilityLabel(state.accessibilityName)
         }
     }
 }

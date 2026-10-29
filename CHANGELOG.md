@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-30
+
+### Added
+- A welcome window on first launch (and once after this update): what LanGuard does, where the icon is, what to do if it is hidden, and an Open at Login switch. Re-open it from Settings › About › **Welcome Guide…**.
+- Opening LanGuard again from Applications, Finder or Raycast now opens Settings, so a hidden menu-bar icon no longer locks you out.
+- If "Restore Normal Networking (Panic)" fails, an alert shows the Terminal command to run, with a Copy Command button.
+- VoiceOver: the menu-bar icon reads "LanGuard, LAN", "LanGuard, Wi-Fi" or "LanGuard, paused"; interface rows say "Link up" / "Link down" (wired) or "On" / "Off" (Wi-Fi) instead of only a coloured dot; the Switch to Wi-Fi progress is announced.
+
+### Changed
+- Settings opens in a window with toolbar tabs, sized to each pane, with a title that follows the pane, and it reopens on the last pane. Settings, About and Welcome show LanGuard in the Dock and the menu bar while they are open.
+- **Open at Login** is now an opt-in: a first launch no longer turns it on, and switching it off stays off. LanGuard no longer shows alerts at launch about its login item; if macOS needs your approval, Settings › General shows an **Allow in Login Items…** button.
+- Menu items are Title Case (Restore Normal Networking (Panic), Re-Enable Connection Protection, Switch to Wi-Fi (Safe Unplug), Auto-Toggle Wi-Fi). Settings labels say what they do ("Banner when Wi-Fi turns off", "Progress window while switching", "“Safe to unplug” alert").
+- The Panic steps in Settings are separate, selectable lines, and an empty interface list says what to do. The Switch to Wi-Fi progress window has that title and larger instruction text.
+
+### Fixed
+- Settings rows no longer lose keyboard focus (or the VoiceOver cursor) every 2 seconds.
+- Turning off **Start at login** was undone at the next launch.
+- The "Used by another app" shortcut warning is readable in light mode.
+
 ## [1.1.11] - 2026-10-25
 
 ### Changed

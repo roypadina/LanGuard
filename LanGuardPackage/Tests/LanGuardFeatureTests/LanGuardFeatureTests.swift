@@ -73,8 +73,16 @@ final class ToggleEngineTests: XCTestCase {
 
 final class LoginItemTests: XCTestCase {
 
-    func test_notRegistered_registers() {
-        XCTAssertEqual(LoginItem.decide(status: .notRegistered, storedPath: nil, currentPath: "/A"), .register)
+    func test_notRegisteredAfterBeingOn_registers() {
+        XCTAssertEqual(LoginItem.decide(status: .notRegistered, storedPath: "/A", currentPath: "/A"), .register)
+    }
+
+    func test_notRegisteredNeverEnabled_none() {
+        XCTAssertEqual(LoginItem.decide(status: .notRegistered, storedPath: nil, currentPath: "/A"), .none)
+    }
+
+    func test_notFoundNeverEnabled_none() {
+        XCTAssertEqual(LoginItem.decide(status: .notFound, storedPath: nil, currentPath: "/A"), .none)
     }
 
     func test_notFound_reRegisters() {

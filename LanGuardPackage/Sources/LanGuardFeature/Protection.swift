@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import SystemConfiguration
 import Network
@@ -110,6 +111,22 @@ public final class Protection: ObservableObject {
             self.publish(ok ? "Off — panic. Normal networking restored." : "Panic FAILED — reboot restores networking", nil)
             Notifier.post(title: ok ? "LanGuard protection off" : "LanGuard panic failed",
                           body: ok ? "Normal networking restored (panic)." : "In Terminal run: sudo /Library/PrivilegedHelperTools/languard-net panic (or see the README Panic section), or reboot.")
+            if !ok { DispatchQueue.main.async { Self.showPanicFailedAlert() } } // a failed safety net must not hide in a banner
+        }
+    }
+
+    @MainActor private static func showPanicFailedAlert() {
+        let command = "sudo \(NetHelper.helperPath) panic"
+        let alert = NSAlert()
+        alert.alertStyle = .critical
+        alert.messageText = "Couldn't restore normal networking"
+        alert.informativeText = "In Terminal run: \(command), or restart the Mac."
+        alert.addButton(withTitle: "Copy Command")
+        alert.addButton(withTitle: "OK")
+        NSApp.activate()
+        if alert.runModal() == .alertFirstButtonReturn {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(command, forType: .string)
         }
     }
 

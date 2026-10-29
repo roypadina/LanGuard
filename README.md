@@ -72,7 +72,7 @@ manually flip Wi-Fi back on while docked, it stays on until you next unplug.
 | 🔔 **Notifications** | Each banner / popup can be switched on or off in Settings. |
 | 🧭 **Configurable indicator** | Menu-bar shows `LAN` / `Wi-Fi` / `Off` — icon only, icon + label, or label only. |
 | ⏸️ **Master switch** | Pause all automatic toggling from the menu. |
-| 🚀 **Start at login** | Self-healing login item — re-registers if the app moves; prompts if macOS needs approval. |
+| 🚀 **Open at Login** | Off until you turn it on (Welcome or Settings). Self-healing login item — re-registers if the app moves; Settings offers a button to Login Items if macOS needs approval. |
 | 🔐 **No admin by default** | Wi-Fi power via CoreWLAN, link state via SystemConfiguration, no network calls of its own. Only the optional Connection Protection installs a root helper (one admin prompt). |
 
 > **Menu-bar indicator** (icon + label style):
@@ -126,12 +126,12 @@ cp -R ~/Library/Developer/Xcode/DerivedData/LanGuard-*/Build/Products/Release/La
 open /Applications/LanGuard.app
 ```
 
-The app lives in the menu bar (no Dock icon). On first launch, click **Allow** on the
+The app lives in the menu bar (no Dock icon, except while Settings, About or Welcome is open). On first launch a Welcome window explains it; click **Allow** on the
 notification prompt if you want toggle banners.
 
 ## Usage
 
-Click the menu-bar icon for status, the **Auto-toggle** master switch, and **Settings…**.
+Click the menu-bar icon for status, the **Auto-Toggle Wi-Fi** master switch, and **Settings…**.
 
 In **Settings** you can:
 - choose which **wired adapters** count as triggers (real adapters on by default, virtual off),
@@ -140,7 +140,7 @@ In **Settings** you can:
 - record the **Switch to Wi-Fi shortcut**,
 - turn on optional **connection protection** (one admin prompt installs a root helper, see below),
 - pick the **menu-bar icon style** (icon / icon + label / label),
-- enable **Start at login**.
+- enable **Open at Login**.
 
 <div align="center">
 
@@ -186,7 +186,7 @@ The first unplug on a new network is not protected yet: a network is learned onc
 on the same router (or tick "Protect this network").
 
 **Panic — restore normal networking**, from easiest:
-1. Menu bar → **⚠︎ Restore normal networking (panic)**.
+1. Menu bar → **Restore Normal Networking (Panic)**.
 2. Terminal, works even if LanGuard is hung (asks for your password): `sudo /Library/PrivilegedHelperTools/languard-net panic`, or run [`Scripts/languard-panic.sh`](Scripts/languard-panic.sh) from a clone of this repo (it falls back to the one-liner below if the helper is missing). You can bind that script in Raycast as a Script Command; its header is ready.
 3. Without LanGuard or its helper: run `sudo -s`, then paste:
    ```sh
@@ -194,7 +194,7 @@ on the same router (or tick "Protect this network").
    ```
 4. Reboot.
 
-Re-enable afterwards from the menu (**Re-enable connection protection**).
+Re-enable afterwards from the menu (**Re-Enable Connection Protection**).
 
 Quitting LanGuard does **not** turn protection off (so a quit, update or relaunch doesn't cut your
 connections): the guardian keeps watching and the next launch takes over. While LanGuard is quit, an
