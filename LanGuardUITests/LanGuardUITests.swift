@@ -19,6 +19,7 @@ final class LanGuardUITests: XCTestCase {
     func testExample() throws {
         // UI tests must launch the application that they test.
         let app = XCUIApplication()
+        app.launchEnvironment["LANGUARD_TEST"] = "1"  // no first-launch welcome window
         app.launch()
 
         // Use XCTAssert and related functions to verify your tests produce the correct results.

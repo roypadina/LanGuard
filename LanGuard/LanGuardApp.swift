@@ -4,6 +4,11 @@ import LanGuardFeature
 final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor func applicationDidFinishLaunching(_ notification: Notification) {
         AppModel.shared.start()
+        // First launch only (MBX-18); never in the UI-test pipeline.
+        guard ProcessInfo.processInfo.environment["LANGUARD_TEST"] != "1",
+              !UserDefaults.standard.bool(forKey: "didShowWelcome") else { return }
+        UserDefaults.standard.set(true, forKey: "didShowWelcome")
+        WelcomeWindow.show()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }

@@ -368,10 +368,11 @@ struct ConfigView: View {
                         Text("Version \(AboutInfo.version)").font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button("About LanGuard…") { AboutWindow.show() }
-                    Button("Support on Ko-fi ☕") { NSWorkspace.shared.open(AboutInfo.koFi) }
-                        .buttonStyle(.borderedProminent)
+                    Button("About LanGuard") { AboutWindow.show() }
+                    Button("Welcome Guide…") { WelcomeWindow.show() }
                 }
+                Button("Support on Ko-fi ☕") { NSWorkspace.shared.open(AboutInfo.koFi) }
+                    .buttonStyle(.borderedProminent)
             }
 
             Section {
