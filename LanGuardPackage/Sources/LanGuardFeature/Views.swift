@@ -94,6 +94,7 @@ struct AboutView: View {
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
                 .frame(width: 96, height: 96)
+                .accessibilityHidden(true)
 
             VStack(spacing: 2) {
                 Text("LanGuard").font(.title.bold())
@@ -187,6 +188,7 @@ public struct ConfigView: View {
     private var wifi: [NetInterface] { InterfaceCatalog.wifi() }
 
     public var body: some View {
+        let _ = tick
         VStack(spacing: 0) {
             Picker("Section", selection: $pane) {
                 ForEach(Pane.allCases) { Text($0.rawValue).tag($0) }
@@ -208,8 +210,8 @@ public struct ConfigView: View {
             .formStyle(.grouped)
         }
         .frame(width: 520, height: 500)
-        // Every 2 s the body re-evaluates (helper/login/hot-key state, status texts); the interface
-        // rows and the protection status row also carry `.id(tick)` so they are rebuilt, not diffed.
+        // Every 2 s the body re-evaluates (helper/login/hot-key state, status texts, link dots);
+        // `let _ = tick` ties it to the timer without giving rows a new identity (keeps focus).
         .onReceive(refresh) { _ in tick &+= 1 }
         .onAppear { loginOn = LoginItem.isEnabled }
     }
@@ -257,6 +259,7 @@ public struct ConfigView: View {
                 subtitle: "Wi-Fi turns off when any checked wired link is active. Virtual adapters (bridge/VPN/VM) are off by default.",
                 interfaces: wired,
                 isActive: { model.linkActive($0.bsdName) },
+                words: ("Link up", "Link down"),
                 isOn: { model.settings.wiredEnabled($0) },
                 set: { iface, on in
                     model.settings.setWiredEnabled(iface, on)
@@ -269,6 +272,7 @@ public struct ConfigView: View {
                 subtitle: "These adapters get switched on/off.",
                 interfaces: wifi,
                 isActive: { model.wifiPoweredOn($0.bsdName) },
+                words: ("On", "Off"),
                 isOn: { model.settings.wifiEnabled($0.bsdName) },
                 set: { iface, on in
                     model.settings.setWiFiEnabled(iface.bsdName, on)
@@ -291,6 +295,8 @@ public struct ConfigView: View {
                         Button(recorder.recording ? "Press keys… (Esc cancels)" : model.settings.hotKey.label) {
                             recorder.toggle(current: model.settings.hotKey, save: model.setHotKey)
                         }
+                        .accessibilityLabel("Shortcut")
+                        .accessibilityValue(recorder.recording ? "Press keys" : model.settings.hotKey.label)
                     }
                 }
             } header: {
@@ -340,7 +346,6 @@ public struct ConfigView: View {
                         ))
                     }
                     LabeledContent("Status", value: model.protection.status)
-                        .id(tick) // force status refresh
                     HStack {
                         if NetHelper.outdated {
                             Button("Update helper…") { NetHelper.install() }
@@ -371,7 +376,7 @@ public struct ConfigView: View {
         Form {
             Section {
                 HStack(spacing: 10) {
-                    Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 40, height: 40)
+                    Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 40, height: 40).accessibilityHidden(true)
                     VStack(alignment: .leading) {
                         Text("LanGuard").font(.headline)
                         Text("Version \(AboutInfo.version)").font(.caption).foregroundStyle(.secondary)
@@ -409,6 +414,7 @@ public struct ConfigView: View {
         subtitle: String,
         interfaces: [NetInterface],
         isActive: @escaping (NetInterface) -> Bool,
+        words: (active: String, inactive: String),
         isOn: @escaping (NetInterface) -> Bool,
         set: @escaping (NetInterface, Bool) -> Void
     ) -> some View {
@@ -417,15 +423,19 @@ public struct ConfigView: View {
                 Text("No interfaces found.").foregroundStyle(.secondary)
             } else {
                 ForEach(interfaces) { iface in
+                    let active = isActive(iface) // one read per row: it can shell out to ifconfig
                     Toggle(isOn: Binding(
                         get: { isOn(iface) },
                         set: { set(iface, $0) }
                     )) {
                         HStack(spacing: 8) {
-                            Circle()
-                                .fill(isActive(iface) ? Color.green : Color.secondary.opacity(0.4))
-                                .frame(width: 8, height: 8)
+                            Image(systemName: active ? "circle.fill" : "circle")
+                                .foregroundStyle(active ? Color.green : Color.secondary)
+                                .imageScale(.small)
+                                .accessibilityHidden(true)
                             Text("\(iface.displayName)  (\(iface.bsdName))")
+                            Text(active ? words.active : words.inactive)
+                                .foregroundStyle(.secondary)
                             if iface.isVirtual {
                                 Text("virtual")
                                     .font(.caption2)
@@ -435,7 +445,6 @@ public struct ConfigView: View {
                             }
                         }
                     }
-                    .id("\(iface.id)-\(tick)") // unique per row; tick forces the status-dot refresh
                 }
             }
         } header: {
@@ -448,8 +457,8 @@ public struct ConfigView: View {
 
 // MARK: - Switch to Wi-Fi: shortcut recorder + progress window
 
-/// Records one key combo for the global shortcut. Shared object, because the Settings view is
-/// rebuilt every 2 s (`.id(tick)`), which would drop view-local recording state.
+/// Records one key combo for the global shortcut. Shared object, not view-local state, so recording
+/// survives the Settings view being rebuilt.
 final class ShortcutRecorder: ObservableObject {
     static let shared = ShortcutRecorder()
     @Published private(set) var recording = false
@@ -489,7 +498,7 @@ enum ProgressPanel {
     static func show(_ handover: Handover) {
         if panel == nil {
             let p = NSPanel(contentViewController: NSHostingController(rootView: SwitchProgressView(handover: handover)))
-            p.title = "LanGuard"
+            p.title = "Switch to Wi-Fi"
             p.styleMask = [.titled, .closable, .utilityWindow]
             p.level = .floating
             p.hidesOnDeactivate = false
@@ -514,10 +523,13 @@ struct SwitchProgressView: View {
             }
             Text(handover.status ?? "Done").font(.callout)
             Text("Keep the LAN cable plugged in. This window closes itself when it's safe to unplug.")
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(16)
         .frame(width: 320, alignment: .leading)
+        .onChange(of: handover.status) { _, status in
+            if let status { AccessibilityNotification.Announcement(status).post() } // VoiceOver: progress is otherwise silent
+        }
     }
 }
