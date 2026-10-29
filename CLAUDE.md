@@ -5,7 +5,7 @@ goes down. Replaces the old shell `com.roy.wifitoggle` LaunchAgent (the app remo
 on first launch).
 
 ## Layout
-- `LanGuard/` — app target (`LanGuardApp.swift`): `MenuBarExtra` + Settings `Window`, `AppDelegate` starts `AppModel`.
+- `LanGuard/` — app target (`LanGuardApp.swift`): `MenuBarExtra` (+ `Settings…` command); `AppDelegate` starts `AppModel`, shows the first-launch `WelcomeWindow` (`didShowWelcome`; skipped under `LANGUARD_TEST=1`, set by the UI test) and opens Settings on reopen (Finder/Raycast).
 - `LanGuardPackage/Sources/LanGuardFeature/` — all logic (modular, unit-tested):
   - `InterfaceCatalog` — enumerate + classify Ethernet/Wi-Fi via SystemConfiguration. `isVirtual(bsdName:displayName:)` flags bridge/VPN/VM/tunnel adapters (pure, tested).
   - `NetworkMonitor` — `SCDynamicStore` callbacks (link/IPv4) + `NSWorkspace` sleep/wake; per-interface link reads (SC `kSCPropNetLinkActive`, ifconfig fallback). **Flap guard:** ignores link changes while asleep (`willSleepNotification` → `suspended`), waits a settle interval after `didWakeNotification` before evaluating once, and debounces callback bursts/brief flaps (1.5s). Stops a docked Mac's Ethernet dropping on sleep + returning on wake from looking like a real unplug→replug.
@@ -20,7 +20,7 @@ on first launch).
   - `AppSettings` — UserDefaults. Physical wired + Wi-Fi = **opt-out** (`disabledWired`/`disabledWiFi`); virtual wired = **opt-in** (`enabledVirtual`, off by default). `notificationsEnabled` (Wi-Fi back on), `notifyMovedToLAN`, `switchProgressPopup`, `safeToUnplugPopup`, `hotKey`, `menuIconStyle`, `protectionEnabled`, `protectedNetworks`/`disabledNetworks`, per-network stable address + holds (UserDefaults dicts).
   - `LoginItem` / `LegacyCleanup` — SMAppService login item (self-healing, see below); removes legacy LaunchAgent.
   - `AppModel` — wires everything; singleton `AppModel.shared`. `setWiFiPower` is idempotent — only toggles interfaces whose power actually differs and only posts the banner when something really changed.
-  - `Views` — `MenuContent` (menu), `ConfigView` (settings window; virtual adapters get a "virtual" badge).
+  - `Views` — `MenuContent` (menu), `ConfigView(model:pane:)` (one Settings pane; virtual adapters get a "virtual" badge), About window, progress panel. `SettingsWindow` = AppKit `NSTabViewController` (toolbar tabs, per-pane height, last pane remembered) hosting one `ConfigView` per pane; `AccessoryWindows` flips the app to `.regular` while Settings/About/Welcome are open. `WelcomeWindow` also holds `LaunchAtLoginToggle` and `SupportBox`.
 - `Config/` — xcconfig + entitlements. **Un-sandboxed** (CoreWLAN power + launchctl), ad-hoc signed, `LSUIElement=YES` (no Dock icon).
 
 ## Core behaviour (edge-based)
@@ -50,12 +50,12 @@ Release build (universal arm64 + x86_64; needs the generic destination, otherwis
 Min macOS 14. Swift 5 language mode (avoids Swift 6 strict-concurrency friction).
 
 ## Login item (self-healing)
-`LoginItem.ensureRegistered()` runs every launch (`AppModel.start`). It registers the
-login item for the **current** bundle path, records it in the `registeredBundlePath`
-UserDefault, and auto re-registers if the path changes (app moved/rebuilt-into-/Applications)
-or the registration is lost (`.notFound`). On a detected move it re-registers and shows an
-info alert; if macOS marks the item `.requiresApproval`, it prompts and opens Login Items
-settings. Pure decision in `LoginItem.decide(status:storedPath:currentPath:)` (unit-tested).
+`LoginItem.ensureRegistered()` runs every launch (`AppModel.start`) but never opts the user in:
+the `LaunchAtLoginToggle` (Welcome, Settings > General) is the opt-in and records the
+`registeredBundlePath` UserDefault. Once enabled, it auto re-registers if the path changes
+(app moved/rebuilt-into-/Applications) or the registration is lost (`.notFound`), and only logs
+it (no launch-time alerts). A `.notRegistered` status with no stored path means "off" and stays off.
+`.requiresApproval` shows an "Allow in Login Items…" button in the toggle. Pure decision in `LoginItem.decide(status:storedPath:currentPath:)` (unit-tested).
 Just `ditto` a new build over `/Applications/LanGuard.app` and relaunch — no manual defaults
 surgery needed.
 
