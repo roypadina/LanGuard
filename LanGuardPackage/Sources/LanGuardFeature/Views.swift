@@ -5,7 +5,6 @@ import AppKit
 
 public struct MenuContent: View {
     @ObservedObject var model: AppModel
-    @Environment(\.openWindow) private var openWindow
 
     public init(model: AppModel) { self.model = model }
 
@@ -42,11 +41,8 @@ public struct MenuContent: View {
             set: { model.setAuto($0) }
         ))
 
-        Button("Settings…") {
-            openWindow(id: "config")
-            NSApp.activate(ignoringOtherApps: true)
-        }
-        .keyboardShortcut(",", modifiers: .command)
+        Button("Settings…") { SettingsWindow.shared.show() }
+            .keyboardShortcut(",", modifiers: .command)
 
         Divider()
 
@@ -86,8 +82,7 @@ enum AboutWindow {
             w.center()
             window = w
         }
-        NSApp.activate(ignoringOtherApps: true)
-        window?.makeKeyAndOrderFront(nil)
+        if let window { AccessoryWindows.shared.show(window) }
     }
 }
 
@@ -167,14 +162,13 @@ struct AboutView: View {
 
 // MARK: - Settings window
 
-public struct ConfigView: View {
+struct ConfigView: View {
     @ObservedObject var model: AppModel
     @ObservedObject private var recorder = ShortcutRecorder.shared
     @State private var tick: Int = 0
-    @State private var pane: Pane
+    let pane: Pane
 
-    /// Explicit in-window tab bar: on macOS 26+ a native `TabView` moves its tabs into the title-bar
-    /// toolbar as icon-only buttons that collapse behind a ">>" overflow — tabs become invisible.
+    /// One pane per tab of `SettingsWindow`; the raw value is the tab label and window title.
     enum Pane: String, CaseIterable, Identifiable {
         case general = "General", interfaces = "Interfaces", switching = "Switching",
              protection = "Protection", about = "About"
@@ -183,37 +177,23 @@ public struct ConfigView: View {
 
     private let refresh = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
-    public init(model: AppModel) { self.model = model; _pane = State(initialValue: .general) }
-
-    /// Dev-only (screenshot rendering): open on a given tab.
-    init(model: AppModel, pane: Pane) { self.model = model; _pane = State(initialValue: pane) }
+    init(model: AppModel, pane: Pane) { self.model = model; self.pane = pane }
 
     private var wired: [NetInterface] { InterfaceCatalog.wired() }
     private var wifi: [NetInterface] { InterfaceCatalog.wifi() }
 
-    public var body: some View {
+    var body: some View {
         let _ = tick
-        VStack(spacing: 0) {
-            Picker("Section", selection: $pane) {
-                ForEach(Pane.allCases) { Text($0.rawValue).tag($0) }
+        Group {
+            switch pane {
+            case .general: general
+            case .interfaces: interfaces
+            case .switching: switching
+            case .protection: protection
+            case .about: about
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
-
-            Group {
-                switch pane {
-                case .general: general
-                case .interfaces: interfaces
-                case .switching: switching
-                case .protection: protection
-                case .about: about
-                }
-            }
-            .formStyle(.grouped)
         }
-        .frame(width: 520, height: 500)
+        .formStyle(.grouped)
         // Every 2 s the body re-evaluates (helper/login/hot-key state, status texts, link dots);
         // `let _ = tick` ties it to the timer without giving rows a new identity (keeps focus).
         .onReceive(refresh) { _ in tick &+= 1 }
