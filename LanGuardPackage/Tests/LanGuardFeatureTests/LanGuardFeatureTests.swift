@@ -81,6 +81,10 @@ final class LoginItemTests: XCTestCase {
         XCTAssertEqual(LoginItem.decide(status: .notRegistered, storedPath: nil, currentPath: "/A"), .none)
     }
 
+    func test_notFoundNeverEnabled_none() {
+        XCTAssertEqual(LoginItem.decide(status: .notFound, storedPath: nil, currentPath: "/A"), .none)
+    }
+
     func test_notFound_reRegisters() {
         XCTAssertEqual(LoginItem.decide(status: .notFound, storedPath: "/A", currentPath: "/A"), .reRegisterMoved)
     }

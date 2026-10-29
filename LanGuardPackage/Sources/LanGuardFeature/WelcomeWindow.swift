@@ -79,14 +79,13 @@ struct WelcomeView: View {
 struct SupportBox: View {
     var body: some View {
         GroupBox {
-            HStack(alignment: .center, spacing: 12) {
+            HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Free and open source").font(.headline)
                     Text("If LanGuard saves you time, a coffee on Ko-fi keeps the next one coming.")
-                        .font(.callout).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
-                Spacer(minLength: 0)
+                Spacer()
                 Link("Support on Ko-fi ☕", destination: AboutInfo.koFi).buttonStyle(.bordered)
             }
             .padding(4)

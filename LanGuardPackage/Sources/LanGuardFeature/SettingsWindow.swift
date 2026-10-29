@@ -54,6 +54,12 @@ public final class SettingsWindow {
             w.center()
             w.setFrameAutosaveName("SettingsWindow")
             window = w
+            // Release the window on close: a kept-alive one keeps each pane's 2 s refresh timer running.
+            // Frame autosave and `settingsTab` restore the size and the pane on the next open.
+            Task { @MainActor [weak self] in
+                for await _ in NotificationCenter.default.notifications(named: NSWindow.willCloseNotification, object: w) { break }
+                self?.window = nil
+            }
         }
         if let window { AccessoryWindows.shared.show(window) }
     }

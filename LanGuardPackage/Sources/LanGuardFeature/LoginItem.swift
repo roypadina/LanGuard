@@ -19,8 +19,8 @@ public enum LoginItem {
 
     /// Pure decision used by `ensureRegistered` (unit-tested). A `nil` stored path
     /// while already enabled means "first time we're recording it" → no re-register.
-    /// A `nil` stored path while not registered means the user never turned it on (or turned
-    /// it off: `setEnabled(false)` clears the path) → stay off.
+    /// A `nil` stored path while not registered or not found means the user never turned it on (or
+    /// turned it off: `setEnabled(false)` clears the path) → stay off.
     public static func decide(status: SMAppService.Status,
                               storedPath: String?,
                               currentPath: String) -> LoginRegisterDecision {
@@ -28,7 +28,7 @@ public enum LoginItem {
         case .notRegistered:
             return storedPath != nil ? .register : .none
         case .notFound:
-            return .reRegisterMoved
+            return storedPath != nil ? .reRegisterMoved : .none
         case .enabled, .requiresApproval:
             return (storedPath == currentPath || storedPath == nil) ? .none : .reRegisterMoved
         @unknown default:
