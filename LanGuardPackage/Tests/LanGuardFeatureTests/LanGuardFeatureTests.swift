@@ -163,6 +163,13 @@ final class ProtectionTests: XCTestCase {
         XCTAssertNil(Protection.target(preferWiFi: false, wired: nil, wifi: nil))
     }
 
+    func test_linkIfaces_onlyLinkKeys() {
+        XCTAssertEqual(Protection.linkIfaces(["State:/Network/Interface/en8/Link",
+                                              "State:/Network/Interface/en0/IPv4",
+                                              "State:/Network/Global/IPv4",
+                                              "State:/Network/Interface/en12/Link"]), ["en8", "en12"])
+    }
+
     func test_candidates_topOfSubnetDown_skipsBroadcastAndExcludes() {
         let c = Protection.candidates(ip: "192.168.1.16", mask: "255.255.255.0",
                                       exclude: ["192.168.1.16", "192.168.1.1", "192.168.1.253"], count: 3)

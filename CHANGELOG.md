@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-10-30
+
+### Fixed
+- Connection protection: after a brief wired-link drop (for example a dock or cable blip of a fraction of a second), apps that use Apple's networking stack (URLSession / Network.framework) could time out for hours on hosts they were talking to at that moment, while Terminal tools still worked. LanGuard now re-applies the stable address and its routes once the link is back (also after a link change on another adapter on the same router, and once when LanGuard starts while protection is already on). On a docked Mac whose Ethernet drops during sleep this also happens once after each wake: a pause of about 2 seconds.
+- Workaround for older versions: switch Connection Protection off and on in Settings › Protection.
+
 ## [1.2.0] - 2026-10-30
 
 ### Added
