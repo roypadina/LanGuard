@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     name: Test & build
-    runs-on: macos-14
+    runs-on: macos-15   # macos-14 images retire 2026-11-02 (brownouts fail jobs)
     steps:
       - uses: actions/checkout@v4
 
