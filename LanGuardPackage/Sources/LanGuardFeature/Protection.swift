@@ -27,14 +27,19 @@ public final class Protection: ObservableObject {
     /// queue never reads main-thread state (gate-3 #8).
     struct Snapshot {
         var enabled: Bool, preferWiFi: Bool, wired: [String], protected: Set<String>, disabled: Set<String>
+        var linkChanged: Set<String> = []
     }
     private func snapshot() -> Snapshot {
-        Snapshot(enabled: settings.protectionEnabled, preferWiFi: preferWiFi,
-                 wired: InterfaceCatalog.wired().filter { settings.wiredEnabled($0) }.map(\.bsdName),
-                 protected: settings.protectedNetworks, disabled: settings.disabledNetworks)
+        defer { linkChanged = [] }
+        return Snapshot(enabled: settings.protectionEnabled, preferWiFi: preferWiFi,
+                        wired: InterfaceCatalog.wired().filter { settings.wiredEnabled($0) }.map(\.bsdName),
+                        protected: settings.protectedNetworks, disabled: settings.disabledNetworks,
+                        linkChanged: linkChanged)
     }
     private var scheduled = false   // main thread: coalesces bursts of reconcile requests (gate-3 #9)
     private var dirty = false       // main thread: a request arrived while one was pending → run again
+    private var linkChanged = Set<String>()  // main thread: interfaces whose Link key changed since the last snapshot
+    private var pendingRefresh = Set<String>() // queue-owned: link changed, A's routes not re-applied yet
 
     private let settings: AppSettings
     private let queue = DispatchQueue(label: "com.roy.languard.protection") // serial: one helper call at a time
@@ -53,14 +58,18 @@ public final class Protection: ObservableObject {
         queue.async {
             if NetHelper.state() != nil {
                 self.expectingState = NetHelper.run(["adopt", "\(getpid())"]) == NetHelper.Exit.ok.rawValue
+                // A flap while LanGuard was not running went unseen: re-apply once on the adopted interface.
+                if self.expectingState, let i = NetHelper.state()?["IFACE"] { self.pendingRefresh.insert(i) }
             }
             self.reconcileLocked(snap)
         }
         var ctx = SCDynamicStoreContext(version: 0, info: Unmanaged.passUnretained(self).toOpaque(),
                                         retain: nil, release: nil, copyDescription: nil)
-        let cb: SCDynamicStoreCallBack = { _, _, info in
+        let cb: SCDynamicStoreCallBack = { _, changed, info in
             guard let info else { return }
-            Unmanaged<Protection>.fromOpaque(info).takeUnretainedValue().reconcile()
+            let me = Unmanaged<Protection>.fromOpaque(info).takeUnretainedValue()
+            me.linkChanged.formUnion(Protection.linkIfaces((changed as? [String]) ?? []))
+            me.reconcile()
         }
         if let s = SCDynamicStoreCreate(nil, "com.roy.languard.protection" as CFString, cb, &ctx) {
             SCDynamicStoreSetNotificationKeys(s, nil, ["State:/Network/Interface/en[0-9]+/Link",
@@ -139,6 +148,7 @@ public final class Protection: ObservableObject {
     // MARK: - Core
 
     private func reconcileLocked(_ snap: Snapshot) {
+        pendingRefresh.formUnion(snap.linkChanged)   // kept across early returns: the link is usually still down here
         guard snap.enabled, NetHelper.installed else {
             if NetHelper.state() != nil { NetHelper.run(["down"]) }
             expectingState = false
@@ -218,9 +228,21 @@ public final class Protection: ObservableObject {
             if s["IFACE"] != target || !Net.hasAddress(target, s["A"] ?? "") {
                 let rc = NetHelper.run(["move", target])
                 // noState = the guardian tore down meanwhile: keep expecting so the hold logic sees it (gate-2 #7).
+                pendingRefresh = []
                 if rc == NetHelper.Exit.noState.rawValue { return }
+            } else if pendingRefresh.contains(where: { $0 == target || Net.router($0) == router }) {
+                // A link flap (2026-10-30 11:30: en8 down 0.25 s, DHCP address removed + re-added) leaves A and
+                // our /1s in place, but the routes cached under them go stale: Network.framework's flows to
+                // hosts that were in use then (api.anthropic.com) timed out for 12 h while kernel sockets
+                // worked. Without protection the default route is re-created and that cache with it.
+                // `up` = down + up under the helper lock, the same sequence that cured it (toggle off/on).
+                // Another en* on the same router counts too: its flap deletes its scoped /1s (scope_others).
+                Log.write("protection: link changed on \(pendingRefresh.sorted()) → re-apply on \(target)")
+                // Failed before its `down` (lock busy, VPN, …) = still stale: keep pending, retry next pass.
+                if up(target, router: router, net: net) || NetHelper.state()?["PID"] != "\(getpid())" { pendingRefresh = [] }
             }
         } else {
+            pendingRefresh = []
             up(target, router: router, net: net)
         }
         let now = NetHelper.state()
@@ -230,8 +252,9 @@ public final class Protection: ObservableObject {
     }
 
     /// Bring protection up on `iface`, trying the remembered address first, then free candidates.
-    private func up(_ iface: String, router: String, net: String) {
-        guard let ip = Net.address(iface), let mask = Net.mask(iface) else { return }
+    @discardableResult
+    private func up(_ iface: String, router: String, net: String) -> Bool {
+        guard let ip = Net.address(iface), let mask = Net.mask(iface) else { return false }
         var candidates = Self.candidates(ip: ip, mask: mask, exclude: [ip, router])
         if let saved = settings.stableAddress(net), candidates.contains(saved) {
             candidates.removeAll { $0 == saved }
@@ -240,20 +263,21 @@ public final class Protection: ObservableObject {
         for a in candidates.prefix(8) {
             let rc = NetHelper.run(["up", iface, a, "\(getpid())"])
             switch NetHelper.Exit(rawValue: rc) {
-            case .ok: settings.setStableAddress(net, a); return
+            case .ok: settings.setStableAddress(net, a); return true
             case .taken: continue
             case .verifyFailed:                                                 // no retry loop: pause 5 min (gate-3 #5)
                 settings.setHold(net, until: Date().addingTimeInterval(5 * 60))
-                return publish("Off — routes could not be verified; retrying in 5 min", nil)
-            case .conflict: return publish("Paused — a VPN or exit node owns routing", nil)
-            case .otherInstance: return publish("Off — another LanGuard is protecting", nil)
-            case .noGuardian: return publish("Off — guardian not running", nil)
-            case .panicked: return publish("Off — panic. Re-enable from the menu.", nil)
-            default: return publish("Off — helper error \(rc)", nil)
+                publish("Off — routes could not be verified; retrying in 5 min", nil); return false
+            case .conflict: publish("Paused — a VPN or exit node owns routing", nil); return false
+            case .otherInstance: publish("Off — another LanGuard is protecting", nil); return false
+            case .noGuardian: publish("Off — guardian not running", nil); return false
+            case .panicked: publish("Off — panic. Re-enable from the menu.", nil); return false
+            default: publish("Off — helper error \(rc)", nil); return false
             }
         }
         settings.setHold(net, until: Date().addingTimeInterval(5 * 60))
         publish("Off — no free address found; retrying in 5 min", nil)
+        return false
     }
 
     private func publish(_ text: String, _ iface: String?) {
@@ -272,6 +296,14 @@ public final class Protection: ObservableObject {
     /// Wired wins unless the user switched to Wi-Fi; otherwise whatever is usable.
     static func target(preferWiFi: Bool, wired: String?, wifi: String?) -> String? {
         preferWiFi ? (wifi ?? wired) : (wired ?? wifi)
+    }
+
+    /// Interfaces named by changed `State:/Network/Interface/<if>/Link` keys.
+    static func linkIfaces(_ keys: [String]) -> Set<String> {
+        Set(keys.compactMap { k in
+            let p = k.split(separator: "/")
+            return p.count == 5 && p[1] == "Network" && p[2] == "Interface" && p[4] == "Link" ? String(p[3]) : nil
+        })
     }
 
     /// Free-address candidates from the top of the subnet down (skips network, broadcast, excludes).
