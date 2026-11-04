@@ -5,7 +5,7 @@ free, open-source macOS menu-bar utility. Copy blocks are ready to paste.
 
 > Honesty rules for every post: it's **brand-new** (few stars), **ad-hoc signed / not
 > notarized** (first launch needs System Settings → Privacy & Security → Open Anyway), **macOS 14+**, **free + MIT**, **no
-> admin / no network calls**. Don't overclaim. Don't beg for upvotes. Keep tip-jar links out
+> admin / no network calls besides the daily update check**. Don't overclaim. Don't beg for upvotes. Keep tip-jar links out
 > of launch posts — they live on the repo.
 
 ---
@@ -117,7 +117,7 @@ Per-interface config. You pick which wired adapters count as a trigger and which
 
 There's also the usual small stuff: optional toggle notifications, a configurable menu-bar indicator (LAN/Wi-Fi/Off), a master pause switch, and start-at-login via a self-healing login item.
 
-On the technical side: native Swift 5 / SwiftUI using MenuBarExtra. Wi-Fi power goes through CoreWLAN, link state comes from SystemConfiguration (SCDynamicStore callbacks), with an ifconfig read as a fallback. No sudo, no admin rights, no privileged helper, and it never uses networksetup. It's un-sandboxed (CoreWLAN power + login-item management need it). It makes no network calls of its own, no ads, no tracking. The edge decision logic is dependency-injected and unit-tested.
+On the technical side: native Swift 5 / SwiftUI using MenuBarExtra. Wi-Fi power goes through CoreWLAN, link state comes from SystemConfiguration (SCDynamicStore callbacks), with an ifconfig read as a fallback. No sudo, no admin rights, no privileged helper, and it never uses networksetup. It's un-sandboxed (CoreWLAN power + login-item management need it). It makes no network calls of its own besides a daily update check, no ads, no tracking. The edge decision logic is dependency-injected and unit-tested.
 
 Honest limitations:
 - It's brand new. Very few stars, not much real-world mileage yet, so expect rough edges and please file issues.
@@ -149,7 +149,7 @@ How it works:
 - Ignores virtual/VPN/VM adapters (e.g. VMware vmnet) so they don't falsely trigger it.
 - No admin by default (only the optional Connection Protection installs a root helper). Uses CoreWLAN + SystemConfiguration. Native Swift / SwiftUI.
 - Optional notifications, configurable indicator (LAN / Wi-Fi / Off), master pause switch, start-at-login.
-- No ads, no tracking, makes no network calls of its own.
+- No ads, no tracking, makes no network calls of its own besides a daily update check.
 
 Install: `brew install --cask roypadina/tap/languard` (my own tap), or build from source.
 Gatekeeper: ad-hoc signed but not notarized yet — first launch is System Settings → Privacy & Security → Open Anyway, or `xattr -dr com.apple.quarantine /Applications/LanGuard.app`.
@@ -171,7 +171,7 @@ If you dock your Mac to wired Ethernet, macOS leaves Wi-Fi on anyway. LanGuard t
 - Edge-based: it only acts on the plug/unplug moment. Turn Wi-Fi back on manually while docked and it leaves that alone until your next unplug.
 - Reconciles state after sleep.
 - You pick which wired adapters trigger it and which Wi-Fi adapters it controls; virtual/VPN/VM adapters are ignored by default.
-- No admin by default (CoreWLAN + SystemConfiguration). No network calls of its own, no ads, no tracking.
+- No admin by default (CoreWLAN + SystemConfiguration). No network calls of its own besides a daily update check, no ads, no tracking.
 
 Honest: brand new (few stars), ad-hoc signed/not notarized (first launch: System Settings → Privacy & Security → Open Anyway, or xattr -dr com.apple.quarantine), macOS 14+.
 
@@ -225,7 +225,7 @@ Made a tiny free macOS menu-bar app: LanGuard. Plug in Ethernet -> Wi-Fi turns o
 
 3/ Honest status: brand-new, few stars, ad-hoc signed and not notarized yet — first launch needs System Settings → Privacy & Security → Open Anyway.
 brew install --cask roypadina/tap/languard (or build from source)
-No ads, no tracking, no network calls of its own.
+No ads, no tracking, no network calls of its own besides a daily update check.
 ```
 
 ### Mastodon / Bluesky
@@ -243,7 +243,7 @@ When you plug into wired Ethernet, it turns Wi-Fi off automatically; when you un
 - Edge-based: acts only on plug/unplug transitions, so a manual Wi-Fi toggle is respected until the next unplug.
 - Wake-aware: re-checks and corrects state after sleep.
 - Per-interface: choose which wired adapters trigger it and which Wi-Fi adapters it controls; virtual/VPN/VM adapters are auto-ignored.
-- No admin by default: built on CoreWLAN + SystemConfiguration, native Swift/SwiftUI. No ads, no tracking, no network calls of its own.
+- No admin by default: built on CoreWLAN + SystemConfiguration, native Swift/SwiftUI. No ads, no tracking, no network calls of its own besides a daily update check.
 
 Brand-new and ad-hoc signed (not notarized) — first launch needs System Settings → Privacy & Security → Open Anyway. macOS 14+.
 
@@ -283,7 +283,7 @@ List LanGuard, then mark it as an alternative to **BridgeChecker** and **ToggleW
 - **Short tagline:** `Wi-Fi off when you plug in Ethernet, back on when you unplug`
 - **Description:**
 ```
-LanGuard is a free, open-source (MIT) macOS menu-bar app that turns Wi-Fi off when a wired Ethernet link becomes active and back on when you unplug. It's edge-based (acts only on plug/unplug, so manual changes are respected), wake-aware, and per-interface (virtual/VPN/VM adapters are ignored by default). No admin rights, no tracking, no network calls of its own. Native Swift/SwiftUI. macOS 14+.
+LanGuard is a free, open-source (MIT) macOS menu-bar app that turns Wi-Fi off when a wired Ethernet link becomes active and back on when you unplug. It's edge-based (acts only on plug/unplug, so manual changes are respected), wake-aware, and per-interface (virtual/VPN/VM adapters are ignored by default). No admin rights, no tracking, no network calls of its own besides a daily update check. Native Swift/SwiftUI. macOS 14+.
 ```
 - **License:** Open Source / Free · **Platform:** Mac · **Tags:** `menu-bar`, `wifi`, `ethernet`, `networking`, `automation`
 - **Link:** https://github.com/roypadina/LanGuard

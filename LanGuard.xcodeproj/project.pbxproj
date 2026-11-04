@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		8B90D1482DEDD44A00FBD189 /* LanGuardFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 8B90D1472DEDD44A00FBD189 /* LanGuardFeature */; };
+		A2AD41D309006781388722BB /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = C5D485AC39CD294C4EADA2D1 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -30,6 +31,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Debug.xcconfig,
+				Info.plist,
 				Release.xcconfig,
 				Shared.xcconfig,
 				Tests.xcconfig,
@@ -65,6 +67,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8B90D1482DEDD44A00FBD189 /* LanGuardFeature in Frameworks */,
+				A2AD41D309006781388722BB /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -127,6 +130,7 @@
 			name = LanGuard;
 			packageProductDependencies = (
 				8B90D1472DEDD44A00FBD189 /* LanGuardFeature */,
+				C5D485AC39CD294C4EADA2D1 /* Sparkle */,
 			);
 			productName = LanGuard;
 			productReference = 8BC2655C2DEDD3F400F279A4 /* LanGuard.app */;
@@ -184,6 +188,9 @@
 			);
 			mainGroup = 8BC265532DEDD3F400F279A4;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				31D6B24964E1B24434DBEC58 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 8BC2655D2DEDD3F400F279A4 /* Products */;
 			projectDirPath = "";
@@ -322,10 +329,26 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		31D6B24964E1B24434DBEC58 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.10.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		8B90D1472DEDD44A00FBD189 /* LanGuardFeature */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LanGuardFeature;
+		};
+		C5D485AC39CD294C4EADA2D1 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 31D6B24964E1B24434DBEC58 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

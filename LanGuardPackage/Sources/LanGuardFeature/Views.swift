@@ -61,7 +61,9 @@ public struct MenuContent: View {
 
 // MARK: - About
 
-enum AboutInfo {
+public enum AboutInfo {
+    /// Set by the app target, which owns the Sparkle updater; nil hides the About buttons.
+    public static var checkForUpdates: (() -> Void)?
     static let koFi = URL(string: "https://ko-fi.com/roypadina")!
     static let github = URL(string: "https://github.com/roypadina/LanGuard")!
     static let issues = URL(string: "https://github.com/roypadina/LanGuard/issues")!
@@ -101,6 +103,9 @@ struct AboutView: View {
                 Text("Version \(info["CFBundleShortVersionString"] as? String ?? "") (\(info["CFBundleVersion"] as? String ?? ""))")
                     .font(.callout)
                     .foregroundStyle(.secondary)
+                if let check = AboutInfo.checkForUpdates {
+                    Button("Check for Updates…") { check() }.padding(.top, 4)
+                }
             }
 
             VStack(spacing: 8) {
@@ -370,6 +375,9 @@ struct ConfigView: View {
                     Spacer()
                     Button("About LanGuard") { AboutWindow.show() }
                     Button("Welcome Guide…") { WelcomeWindow.show() }
+                }
+                if let check = AboutInfo.checkForUpdates {
+                    Button("Check for Updates…") { check() }
                 }
                 Button("Support on Ko-fi ☕") { NSWorkspace.shared.open(AboutInfo.koFi) }
                     .buttonStyle(.borderedProminent)

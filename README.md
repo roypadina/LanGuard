@@ -73,7 +73,7 @@ manually flip Wi-Fi back on while docked, it stays on until you next unplug.
 | 🧭 **Configurable indicator** | Menu-bar shows `LAN` / `Wi-Fi` / `Off` — icon only, icon + label, or label only. |
 | ⏸️ **Master switch** | Pause all automatic toggling from the menu. |
 | 🚀 **Open at Login** | Off until you turn it on (Welcome or Settings). Self-healing login item — re-registers if the app moves; Settings offers a button to Login Items if macOS needs approval. |
-| 🔐 **No admin by default** | Wi-Fi power via CoreWLAN, link state via SystemConfiguration, no network calls of its own. Only the optional Connection Protection installs a root helper (one admin prompt). |
+| 🔐 **No admin by default** | Wi-Fi power via CoreWLAN, link state via SystemConfiguration, no network calls of its own besides a daily update check. Only the optional Connection Protection installs a root helper (one admin prompt). |
 
 > **Menu-bar indicator** (icon + label style):
 >
@@ -115,6 +115,12 @@ brew install --cask roypadina/tap/languard
 > xattr -dr com.apple.quarantine "/Applications/LanGuard.app"
 > ```
 > See [Is it safe?](#is-it-safe) for why.
+
+### Updating
+
+LanGuard checks for a new version once a day and asks before installing it (**Check for Updates…** in the About window or
+Settings → About checks now). An in-app update needs no `xattr` step. Homebrew users can also run
+`brew upgrade --cask languard`.
 
 ### Build from source
 
@@ -206,7 +212,8 @@ networking falls back to normal. To turn protection off, use the Settings switch
 Fair question — it toggles your network and launches at login. Here's the honest picture:
 
 - **Open source (MIT).** Every line is in this repo; read or build it yourself.
-- **No network calls of its own. No ads, no analytics, no tracking.** It uses local macOS
+- **No network calls of its own except a daily update check, which downloads the release feed from
+  github.com and sends nothing about you. No ads, no analytics, no tracking.** It uses local macOS
   networking APIs (CoreWLAN, SystemConfiguration). The only external tools it ever runs are
   read-only `ifconfig` (a link-state fallback) and a one-time `launchctl` to remove the legacy
   LaunchAgent — never `networksetup`, never with elevated privileges.
