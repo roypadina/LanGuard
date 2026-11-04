@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-11-04
+
+### Changed
+- The default Switch to Wi-Fi shortcut is now ⌃⌥⇧⌘L (was ⌃⌥⌘L, the same as VaultBar's default panic-lock shortcut, so only one of the two apps got it). If you never recorded your own shortcut, use ⌃⌥⇧⌘L from now on, or record another one in Settings › Switching. A shortcut you recorded yourself stays as it is.
+
 ## [1.3.0] - 2026-11-04
 
 ### Added

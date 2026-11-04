@@ -64,5 +64,5 @@ surgery needed.
 - `registeredBundlePath` UserDefault tracks where the login item is registered from.
 - Helper self-test (no root): `bash LanGuardPackage/Tests/helper/selftest.sh`; `shellcheck -s bash` the script.
 - `route -n get -net 0.0.0.0/1` falls back to the DEFAULT route when the /1 is absent → `route_if` must require `mask: 128.0.0.0`; never `route change` a /1 (edits the default route) — delete + add.
-- Default shortcut is ⌃⌥⌘L, not ⌃⌥⌘W: cmux binds `cmd+ctrl+w` = closeWindow, so missing ⌥ on ⌃⌥⌘W closes the whole cmux window.
+- Default shortcut is ⌃⌥⇧⌘L (was ⌃⌥⌘L through 1.3.0: VaultBar's panic lock defaults to ⌃⌥⌘L, and two apps can't share one Carbon hotkey). Never ⌃⌥⌘W: cmux binds `cmd+ctrl+w` = closeWindow, so missing ⌥ on ⌃⌥⌘W closes the whole cmux window.
 - "Who toggled Wi-Fi?": `/usr/bin/log show --last 30m --predicate 'process == "airportd" AND eventMessage CONTAINS "SET POWER"'` prints `SET POWER ON/OFF request received from pid N (proc)` (ControlCenter = user). Use `/usr/bin/log`: zsh's `log` builtin shadows it.
