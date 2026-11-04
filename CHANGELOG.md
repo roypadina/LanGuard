@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-04
+
+### Added
+- Updates from inside the app. LanGuard checks for a new version once a day and asks before installing it; tick "Automatically download and install updates" in that prompt to skip the question next time. The check downloads the release feed from github.com and sends nothing about you. Check by hand from the menu (**Check for Updates…**). Updates are signed, and installing one this way needs no `xattr` step.
+
 ## [1.2.1] - 2026-10-30
 
 ### Fixed

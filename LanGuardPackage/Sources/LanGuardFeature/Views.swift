@@ -4,6 +4,9 @@ import AppKit
 // MARK: - Menu bar dropdown
 
 public struct MenuContent: View {
+    /// Set by the app target, which owns the Sparkle updater; nil hides the menu item.
+    public static var checkForUpdates: (() -> Void)?
+
     @ObservedObject var model: AppModel
 
     public init(model: AppModel) { self.model = model }
@@ -48,6 +51,10 @@ public struct MenuContent: View {
 
         Button("About LanGuard") {
             AboutWindow.show()
+        }
+
+        if let check = Self.checkForUpdates {
+            Button("Check for Updates…") { check() }
         }
 
         Button("Support on Ko-fi ☕") { NSWorkspace.shared.open(AboutInfo.koFi) }

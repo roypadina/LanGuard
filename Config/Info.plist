@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Sparkle updates. Merged into the generated Info.plist (GENERATE_INFOPLIST_FILE).
+	     The feed is the appcast.xml asset of the latest GitHub release (Scripts/build-release.sh
+	     writes it next to the zip). Checks daily; the update prompt lets the user opt into
+	     automatic installs. -->
+	<key>SUFeedURL</key>
+	<string>https://github.com/roypadina/LanGuard/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>qq4oZAVmJanKJ1bTAzGSO94WWX6cx+/5kCjBZxJXEm0=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+</dict>
+</plist>
