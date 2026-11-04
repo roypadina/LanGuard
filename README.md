@@ -182,7 +182,7 @@ between LAN and Wi-Fi, so connections (agents, VPNs, downloads) survive plugging
 Example: docked in the office with Claude Code or Codex running, press the Switch to Wi-Fi shortcut before
 a meeting, unplug once LanGuard says it's safe, and the agents keep running. Plug the dock back in and
 traffic moves back to the LAN before Wi-Fi turns off, so the sessions don't drop.
-It only applies on networks where LAN and Wi-Fi share a router. Everything it changes is one extra
+Protection only applies on networks where LAN and Wi-Fi share a router. Everything it changes is one extra
 address plus two routes (`0.0.0.0/1`, `128.0.0.0/1`), and copies of those two routes limited to the other
 connection (so apps bound to it, e.g. Tailscale, keep working) — nothing persistent; a reboot clears it.
 A root guardian checks every ~3 s and removes everything when the network looks wrong. When an update
