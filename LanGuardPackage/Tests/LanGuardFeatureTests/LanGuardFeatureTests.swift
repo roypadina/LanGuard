@@ -187,8 +187,8 @@ final class ProtectionTests: XCTestCase {
 final class HotKeyComboTests: XCTestCase {
 
     func test_recordsComboWithLabel() {
-        let combo = HotKeyCombo(keyCode: 37, flags: [.control, .option, .command], characters: "l")
-        XCTAssertEqual(combo?.label, "⌃⌥⌘L")
+        let combo = HotKeyCombo(keyCode: 37, flags: [.control, .option, .shift, .command], characters: "l")
+        XCTAssertEqual(combo?.label, "⌃⌥⇧⌘L")
         XCTAssertEqual(combo, .default)
     }
 

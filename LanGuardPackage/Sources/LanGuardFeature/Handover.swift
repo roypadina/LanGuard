@@ -201,7 +201,7 @@ public struct HotKeyCombo: Codable, Equatable {
     public var label: String
 
     public static let `default` = HotKeyCombo(keyCode: UInt32(kVK_ANSI_L),
-                                              modifiers: UInt32(controlKey | optionKey | cmdKey), label: "⌃⌥⌘L")
+                                              modifiers: UInt32(controlKey | optionKey | shiftKey | cmdKey), label: "⌃⌥⇧⌘L")
 
     /// From a key press. Nil without ⌃/⌥/⌘ (a plain key would hijack typing). Pure (unit-tested).
     public init?(keyCode: UInt16, flags: NSEvent.ModifierFlags, characters: String?) {
