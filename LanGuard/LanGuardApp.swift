@@ -1,39 +1,9 @@
 import SwiftUI
 import LanGuardFeature
-import Sparkle
-
-/// Sparkle updater: feed URL + public key come from Config/Info.plist.
-@MainActor enum Updates {
-    static let controller = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: presenter)
-    static func check() { controller.checkForUpdates(nil) }
-    private static let presenter = Presenter()
-
-    /// A menu-bar-only app's scheduled update alert opens behind other windows, with no Dock icon to
-    /// find it by. Same rule as `AccessoryWindows`: Dock icon + front while the alert is up, then back.
-    private final class Presenter: NSObject, SPUStandardUserDriverDelegate {
-        var supportsGentleScheduledUpdateReminders: Bool { true }
-
-        // Sparkle calls these on the main thread; its header just doesn't say so to Swift.
-        func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem, state: SPUUserUpdateState) {
-            MainActor.assumeIsolated {
-                NSApp.setActivationPolicy(.regular)
-                NSApp.activate()
-            }
-        }
-
-        func standardUserDriverWillFinishUpdateSession() {
-            DispatchQueue.main.async {  // after Sparkle's window has closed
-                if !NSApp.windows.contains(where: { $0.isVisible && $0.canBecomeMain }) {
-                    NSApp.setActivationPolicy(.accessory)
-                }
-            }
-        }
-    }
-}
-
 final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor func applicationDidFinishLaunching(_ notification: Notification) {
         AppModel.shared.start()
+        AboutInfo.updateMenuTitle = { Updates.menuTitle }
         AboutInfo.checkForUpdates = Updates.check  // Sparkle lives in the app target, the About views in the package
         _ = Updates.controller  // starts the daily update check
         // First launch only (MBX-18); never in the UI-test pipeline.

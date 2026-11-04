@@ -41,10 +41,14 @@ public struct MenuContent: View {
             set: { model.setAuto($0) }
         ))
 
+        Divider()
+
+        if let check = AboutInfo.checkForUpdates {
+            Button(AboutInfo.updateMenuTitle?() ?? "Check for Updates…") { check() }
+        }
+
         Button("Settings…") { SettingsWindow.shared.show() }
             .keyboardShortcut(",", modifiers: .command)
-
-        Divider()
 
         Button("About LanGuard") {
             AboutWindow.show()
@@ -64,6 +68,8 @@ public struct MenuContent: View {
 public enum AboutInfo {
     /// Set by the app target, which owns the Sparkle updater; nil hides the About buttons.
     public static var checkForUpdates: (() -> Void)?
+    /// Menu title for the update item ("Install Update X.Y.Z…" once one is found); read each time the menu renders.
+    public static var updateMenuTitle: (() -> String)?
     static let koFi = URL(string: "https://ko-fi.com/roypadina")!
     static let github = URL(string: "https://github.com/roypadina/LanGuard")!
     static let issues = URL(string: "https://github.com/roypadina/LanGuard/issues")!
