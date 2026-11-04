@@ -13,9 +13,12 @@ import Sparkle
     private final class Presenter: NSObject, SPUStandardUserDriverDelegate {
         var supportsGentleScheduledUpdateReminders: Bool { true }
 
+        // Sparkle calls these on the main thread; its header just doesn't say so to Swift.
         func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem, state: SPUUserUpdateState) {
-            NSApp.setActivationPolicy(.regular)
-            NSApp.activate()
+            MainActor.assumeIsolated {
+                NSApp.setActivationPolicy(.regular)
+                NSApp.activate()
+            }
         }
 
         func standardUserDriverWillFinishUpdateSession() {
@@ -31,7 +34,7 @@ import Sparkle
 final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor func applicationDidFinishLaunching(_ notification: Notification) {
         AppModel.shared.start()
-        MenuContent.checkForUpdates = Updates.check  // Sparkle lives in the app target, the menu in the package
+        AboutInfo.checkForUpdates = Updates.check  // Sparkle lives in the app target, the About views in the package
         _ = Updates.controller  // starts the daily update check
         // First launch only (MBX-18); never in the UI-test pipeline.
         guard ProcessInfo.processInfo.environment["LANGUARD_TEST"] != "1",

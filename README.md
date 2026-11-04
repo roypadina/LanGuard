@@ -118,8 +118,8 @@ brew install --cask roypadina/tap/languard
 
 ### Updating
 
-LanGuard checks for a new version once a day and asks before installing it (menu → **Check for Updates…**
-checks now). An in-app update needs no `xattr` step. Homebrew users can also run
+LanGuard checks for a new version once a day and asks before installing it (**Check for Updates…** in the About window or
+Settings → About checks now). An in-app update needs no `xattr` step. Homebrew users can also run
 `brew upgrade --cask languard`.
 
 ### Build from source
