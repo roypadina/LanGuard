@@ -25,7 +25,7 @@ final class AccessoryWindows: NSObject, NSWindowDelegate {
         let monitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) { _ in clicked = true }
         let observer = NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { _ in
             MainActor.assumeIsolated {
-                guard !clicked, !done, window?.isVisible ?? true else { return }
+                guard !clicked, !done, NSApp.activationPolicy() == .regular, window?.isVisible ?? true else { return }
                 done = true
                 NSApp.activate(ignoringOtherApps: true)
                 window?.makeKeyAndOrderFront(nil)
