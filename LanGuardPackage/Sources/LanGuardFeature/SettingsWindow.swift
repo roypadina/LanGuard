@@ -19,15 +19,16 @@ final class AccessoryWindows: NSObject, NSWindowDelegate {
 
     /// shortcut: ~0.5 s after the .accessory → .regular switch macOS hands activation back to the previous app (traced in
     /// PullPing: Settings behind Ghostex, no click). Take it back once unless the user clicked elsewhere meanwhile; drop when macOS stops.
-    private func keepFront(_ window: NSWindow) {
+    /// Limit: a keyboard switch (⌘-Tab, a launcher hotkey) within the 1.5 s is pulled back once. nil = Sparkle's update window.
+    func keepFront(_ window: NSWindow?) {
         var clicked = false, done = false
         let monitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) { _ in clicked = true }
         let observer = NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { _ in
             MainActor.assumeIsolated {
-                guard !clicked, !done, window.isVisible else { return }
+                guard !clicked, !done, window?.isVisible ?? true else { return }
                 done = true
                 NSApp.activate(ignoringOtherApps: true)
-                window.makeKeyAndOrderFront(nil)
+                window?.makeKeyAndOrderFront(nil)
             }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
@@ -42,6 +43,9 @@ final class AccessoryWindows: NSObject, NSWindowDelegate {
         if !others { NSApp.setActivationPolicy(.accessory) }
     }
 }
+
+/// For the app target's Sparkle delegate: the hand-back guard of `AccessoryWindows`, for the update window.
+@MainActor public func keepUpdateWindowFront() { AccessoryWindows.shared.keepFront(nil) }
 
 /// Own Settings window (MBX-16): `SettingsLink`/`openSettings` are unreliable in a menu-bar-only app.
 /// `NSTabViewController` keeps the tabs as toolbar icons; a SwiftUI `TabView` in a plain `NSWindow`
