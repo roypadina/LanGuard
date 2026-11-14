@@ -14,6 +14,26 @@ final class AccessoryWindows: NSObject, NSWindowDelegate {
         // Forceful: a user action, and on macOS 14+ the front app can refuse the activate() request (window opens behind).
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
+        keepFront(window)
+    }
+
+    /// shortcut: ~0.5 s after the .accessory → .regular switch macOS hands activation back to the previous app (traced in
+    /// PullPing: Settings behind Ghostex, no click). Take it back once unless the user clicked elsewhere meanwhile; drop when macOS stops.
+    private func keepFront(_ window: NSWindow) {
+        var clicked = false, done = false
+        let monitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) { _ in clicked = true }
+        let observer = NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated {
+                guard !clicked, !done, window.isVisible else { return }
+                done = true
+                NSApp.activate(ignoringOtherApps: true)
+                window.makeKeyAndOrderFront(nil)
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            monitor.map(NSEvent.removeMonitor)
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
 
     func windowWillClose(_ notification: Notification) {

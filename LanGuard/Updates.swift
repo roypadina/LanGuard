@@ -30,9 +30,11 @@ import Sparkle
         var supportsGentleScheduledUpdateReminders: Bool { true }
 
         func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem, state: SPUUserUpdateState) {
+            let userInitiated = state.userInitiated
             MainActor.assumeIsolated {
                 NSApp.setActivationPolicy(.regular)
-                NSApp.activate()
+                // A "Check for Updates…" click forces it (macOS 14+ can refuse activate()); scheduled reminders never steal focus.
+                if userInitiated { NSApp.activate(ignoringOtherApps: true) } else { NSApp.activate() }
             }
         }
 
