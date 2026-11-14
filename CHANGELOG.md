@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-11-15
+
+### Fixed
+- On macOS 14 and later, Settings, About and the Welcome window opened from the menu bar come to the front and stay there, instead of opening behind the app you were using.
+- Check for Updates… brings the update window to the front.
+
 ## [1.4.0] - 2026-11-14
 
 ### Added
