@@ -8,13 +8,13 @@ private final class Env {
     var wiredActive: [String] = []
     var auto = true
     var stored: Bool?
-    var calls: [(on: Bool, names: [String])] = []
+    var calls: [(on: Bool, names: [String], edge: Bool)] = []
 
     func engine() -> ToggleEngine {
         ToggleEngine(dependencies: .init(
             activeWiredNames: { self.wiredActive },
             wifiTargets: { ["en0"] },
-            setWiFiPower: { on, names in self.calls.append((on, names)) },
+            setWiFiPower: { on, names, edge in self.calls.append((on, names, edge)) },
             anyWiFiOn: { false },
             autoEnabled: { self.auto },
             saveLastWired: { self.stored = $0 },
@@ -68,6 +68,17 @@ final class ToggleEngineTests: XCTestCase {
         let engine = env.engine()   // loads prev = true
         engine.reapply()            // clears edge memory, re-enforces
         XCTAssertEqual(env.calls.map(\.on), [false])
+    }
+
+    /// The Ko-fi card counts only automatic switches: wired-link edges, never launch/reapply enforcement.
+    func test_onlyEdgesAreAutomatic() {
+        let env = Env(); env.stored = nil; env.wiredActive = ["en8"]
+        let engine = env.engine()
+        engine.evaluate()                       // first run: enforce
+        env.wiredActive = []; engine.evaluate() // unplug: edge
+        env.wiredActive = ["en8"]; engine.evaluate() // plug in: edge
+        engine.reapply()                        // e.g. Back to LAN
+        XCTAssertEqual(env.calls.map(\.edge), [false, true, true, false])
     }
 }
 

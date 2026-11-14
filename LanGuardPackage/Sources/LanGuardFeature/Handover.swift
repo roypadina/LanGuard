@@ -31,7 +31,8 @@ public final class Handover: ObservableObject {
 
     /// LAN came up: keep Wi-Fi on until the LAN reaches the internet and protection has moved
     /// to the LAN, then turn Wi-Fi off. A LAN without internet never cuts Wi-Fi.
-    func toLAN(_ wifi: [String], lanName: @escaping () -> String) {
+    /// `edge` = an automatic switch (wired link came up), counted for the Ko-fi card.
+    func toLAN(_ wifi: [String], edge: Bool, lanName: @escaping () -> String) {
         let on = wifi.filter { WiFiController.isPoweredOn($0) }
         Log.write("toLAN targets=\(wifi) on=\(on) manualWiFi=\(manualWiFi)")
         guard !manualWiFi, !on.isEmpty else { return }
@@ -52,6 +53,7 @@ public final class Handover: ObservableObject {
             }
             WiFiController.setPower(false, interfaces: on)
             self.status = nil
+            if edge { SupportPrompt.switchCompleted(wifiOff: true) }
             if self.settings.notifyMovedToLAN {
                 Notifier.post(title: "Wi-Fi off", body: "Traffic is on \(lanName()) — Wi-Fi turned off.")
             }

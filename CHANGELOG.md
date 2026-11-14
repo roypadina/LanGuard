@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-14
+
+### Added
+- Ko-fi support card: about 10 seconds after LanGuard turned Wi-Fi off because you plugged in the LAN, a small receipt card may ask for a tip. It waits until 7 days after you install or update to this version, and until LanGuard has made more than 24 automatic switches (both directions count; switches you start yourself, like Switch to Wi-Fi or Back to LAN, are not counted). It asks at most 3 times a year, and never while you are away, while your microphone is in use, while a switch is running or while Settings or the welcome window is open. "Ask me in 2 weeks" snoozes it. "Nope, don't ask again" keeps it quiet until the next major version, and for at least 90 days. A card still open when the next switch starts, or when you open Settings, closes and counts as a snooze.
+- An unanswered support card fades after 5 minutes in front of you (time away doesn't count) and counts as a snooze.
+- The card never takes keyboard focus, and the same three choices are in the menu for keyboard and VoiceOver users. Hold ⌥ in the menu for "Show Support Prompt Now" to preview it (macOS 15 or later).
+
 ## [1.3.2] - 2026-11-04
 
 ### Added

@@ -21,8 +21,9 @@ public final class ToggleEngine: ObservableObject {
         public var activeWiredNames: () -> [String]
         /// Enabled Wi-Fi BSD names to control.
         public var wifiTargets: () -> [String]
-        /// Apply power to the given Wi-Fi interfaces.
-        public var setWiFiPower: (_ on: Bool, _ interfaces: [String]) -> Void
+        /// Apply power to the given Wi-Fi interfaces. `edge` = a wired-link change (automatic switch),
+        /// false = enforcement after launch or `reapply()` (user turned auto on, changed adapters, Back to LAN).
+        public var setWiFiPower: (_ on: Bool, _ interfaces: [String], _ edge: Bool) -> Void
         /// Whether any controlled Wi-Fi is currently powered on (for status).
         public var anyWiFiOn: () -> Bool
         /// Master switch.
@@ -34,7 +35,7 @@ public final class ToggleEngine: ObservableObject {
         public init(
             activeWiredNames: @escaping () -> [String],
             wifiTargets: @escaping () -> [String],
-            setWiFiPower: @escaping (Bool, [String]) -> Void,
+            setWiFiPower: @escaping (Bool, [String], Bool) -> Void,
             anyWiFiOn: @escaping () -> Bool,
             autoEnabled: @escaping () -> Bool,
             saveLastWired: @escaping (Bool?) -> Void,
@@ -77,11 +78,11 @@ public final class ToggleEngine: ObservableObject {
                 // "wired up → Wi-Fi off" case. If no wired, leave Wi-Fi alone.
                 if wired {
                     Log.write("  first-eval wired-up → Wi-Fi OFF \(targets)")
-                    deps.setWiFiPower(false, targets)
+                    deps.setWiFiPower(false, targets, false)
                 }
             } else if wired != prev {
                 Log.write("  EDGE wired \(prev == true ? "true→false" : "false→true") → set Wi-Fi \(!wired ? "ON" : "OFF") \(targets)")
-                deps.setWiFiPower(/* on: */ !wired, targets)
+                deps.setWiFiPower(/* on: */ !wired, targets, true)
             }
         }
 
