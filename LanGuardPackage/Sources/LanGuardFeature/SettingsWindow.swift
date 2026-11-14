@@ -8,6 +8,7 @@ final class AccessoryWindows: NSObject, NSWindowDelegate {
     static let shared = AccessoryWindows()
 
     func show(_ window: NSWindow) {
+        MainActor.assumeIsolated { SupportPrompt.snoozeIfShowing() }  // LanGuard's own UI wins over the Ko-fi card
         window.delegate = self
         NSApp.setActivationPolicy(.regular)
         NSApp.activate()

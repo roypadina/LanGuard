@@ -300,6 +300,8 @@ Free, open-source Mac menu-bar apps and terminal tools, all on one site: **[apps
 
 If LanGuard keeps your Wi-Fi and wired connection from fighting each other, you can support its development — it's optional and always appreciated.
 
+Once in a while, LanGuard asks too. A small receipt card shows up about 10 seconds after LanGuard turned Wi-Fi off because you plugged in the LAN. It only appears after more than 24 automatic switches (both directions count), and at most 3 times a year. "Ask me in 2 weeks" snoozes it, and "Nope, don't ask again" keeps it away until the next major version. If another switch starts while the card is still open, it closes and counts as a snooze. Left unanswered, it fades after 5 minutes and counts as a snooze too. It never shows while you are away, while your microphone is in use, or while Settings or the welcome window is open, and it never takes keyboard focus.
+
 [![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/roypadina)
 
 A ⭐ on the repo helps just as much.

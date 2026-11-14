@@ -38,10 +38,11 @@ public final class AppModel: ObservableObject {
                     .map(\.bsdName)
                     .filter { settings.wifiEnabled($0) }
             },
-            setWiFiPower: { on, names in
+            setWiFiPower: { on, names, edge in
+                SupportPrompt.switchStarted()
                 guard on else {
                     // Wi-Fi goes off only after traffic has moved to the LAN (see Handover).
-                    handover.toLAN(names, lanName: {
+                    handover.toLAN(names, edge: edge, lanName: {
                         InterfaceCatalog.wired()
                             .first { settings.wiredEnabled($0) && monitor.linkActive($0.bsdName) }?
                             .displayName ?? "Wired LAN"
@@ -54,6 +55,7 @@ public final class AppModel: ObservableObject {
                 Log.write("setWiFiPower(on: true) targets=\(names) changing=\(toChange)")
                 guard !toChange.isEmpty else { return }
                 WiFiController.setPower(true, interfaces: toChange)
+                if edge { SupportPrompt.switchCompleted(wifiOff: false) }
                 guard settings.notificationsEnabled else { return }
                 Notifier.post(title: "Wi-Fi on",
                               body: "Wired LAN disconnected — Wi-Fi turned back on.")
@@ -105,6 +107,7 @@ public final class AppModel: ObservableObject {
         Log.write("=== LanGuard \(version) start (debug logging on) ===")
         LegacyCleanup.run()
         Notifier.requestAuthorization()
+        SupportPrompt.start()
 
         // Self-heal an enabled login item (moved bundle / lost registration). No launch-time alerts:
         // opting in and approving it in System Settings happen in `LaunchAtLoginToggle`.
@@ -146,6 +149,7 @@ public final class AppModel: ObservableObject {
     /// Pressed again while switched (LAN still plugged in): back to LAN.
     public func switchToWiFi() {
         guard engine.wiredUp else { return }
+        SupportPrompt.switchStarted()
         if handover.switchedToWiFi { return backToLAN() }
         let wifi = InterfaceCatalog.wifi().map(\.bsdName).filter { settings.wifiEnabled($0) }
         handover.toWiFi(wifi, wired: engine.activeWired)
