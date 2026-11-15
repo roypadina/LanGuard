@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-11-15
+
+### Fixed
+- No longer takes focus back from another app you clicked into right after opening a window.
+
 ## [1.4.1] - 2026-11-15
 
 ### Fixed
