@@ -54,11 +54,17 @@ public final class AppModel: ObservableObject {
                 let toChange = names.filter { !WiFiController.isPoweredOn($0) }
                 Log.write("setWiFiPower(on: true) targets=\(names) changing=\(toChange)")
                 guard !toChange.isEmpty else { return }
-                guard WiFiController.setPower(true, interfaces: toChange) else { return }
-                if edge { SupportPrompt.switchCompleted(wifiOff: false) }
+                let ok = WiFiController.setPower(true, interfaces: toChange)
+                if ok, edge { SupportPrompt.switchCompleted(wifiOff: false) }
                 guard settings.notificationsEnabled else { return }
-                Notifier.post(title: "Wi-Fi on",
-                              body: "Wired LAN disconnected — Wi-Fi turned back on.")
+                // A failed power-on leaves the Mac offline: say so instead of staying silent.
+                if ok {
+                    Notifier.post(title: "Wi-Fi on",
+                                  body: "Wired LAN disconnected — Wi-Fi turned back on.")
+                } else {
+                    Notifier.post(title: "Couldn't turn Wi-Fi on",
+                                  body: "Wired LAN disconnected — turn Wi-Fi on from Control Center.")
+                }
             },
             anyWiFiOn: {
                 InterfaceCatalog.wifi()
