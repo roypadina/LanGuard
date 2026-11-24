@@ -248,3 +248,30 @@ final class NetworkMonitorSleepWakeTests: XCTestCase {
         XCTAssertEqual(evaluations, 1)
     }
 }
+
+final class WiFiControllerTests: XCTestCase {
+
+    private var original: ((String, Bool) throws -> Void)!
+
+    override func setUp() { original = WiFiController.applyPower }
+    override func tearDown() { WiFiController.applyPower = original }
+
+    private struct Refused: Error {}
+
+    func test_setPower_reportsFailure() {
+        WiFiController.applyPower = { _, _ in throw Refused() }
+        XCTAssertFalse(WiFiController.setPower(false, interfaces: ["en0"]))
+    }
+
+    func test_setPower_oneOfSeveralFails_reportsFailure() {
+        WiFiController.applyPower = { name, _ in if name == "en1" { throw Refused() } }
+        XCTAssertFalse(WiFiController.setPower(false, interfaces: ["en0", "en1"]))
+    }
+
+    func test_setPower_success() {
+        var powered: [String] = []
+        WiFiController.applyPower = { name, _ in powered.append(name) }
+        XCTAssertTrue(WiFiController.setPower(true, interfaces: ["en0", "en1"]))
+        XCTAssertEqual(powered, ["en0", "en1"])
+    }
+}
