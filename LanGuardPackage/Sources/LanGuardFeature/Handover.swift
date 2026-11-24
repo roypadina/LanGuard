@@ -51,7 +51,10 @@ public final class Handover: ObservableObject {
                 Log.write("toLAN: protection still on \(iface), Wi-Fi kept on")
                 return
             }
-            WiFiController.setPower(false, interfaces: on)
+            guard WiFiController.setPower(false, interfaces: on) else {
+                self.status = "Couldn't turn Wi-Fi off"
+                return
+            }
             self.status = nil
             if edge { SupportPrompt.switchCompleted(wifiOff: true) }
             if self.settings.notifyMovedToLAN {

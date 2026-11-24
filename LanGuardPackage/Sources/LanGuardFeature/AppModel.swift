@@ -54,7 +54,7 @@ public final class AppModel: ObservableObject {
                 let toChange = names.filter { !WiFiController.isPoweredOn($0) }
                 Log.write("setWiFiPower(on: true) targets=\(names) changing=\(toChange)")
                 guard !toChange.isEmpty else { return }
-                WiFiController.setPower(true, interfaces: toChange)
+                guard WiFiController.setPower(true, interfaces: toChange) else { return }
                 if edge { SupportPrompt.switchCompleted(wifiOff: false) }
                 guard settings.notificationsEnabled else { return }
                 Notifier.post(title: "Wi-Fi on",
