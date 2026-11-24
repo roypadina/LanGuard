@@ -213,3 +213,38 @@ final class HotKeyComboTests: XCTestCase {
         XCTAssertEqual(HotKeyCombo(keyCode: 105, flags: [.control], characters: "\u{F710}")?.label, "⌃#105")
     }
 }
+
+final class NetworkMonitorSleepWakeTests: XCTestCase {
+
+    /// Sleeping again before the post-wake settle ends must cancel it: otherwise it fires
+    /// later, clears `suspended` and evaluates in the middle of the next wake's network churn.
+    func test_sleepDuringWakeSettle_cancelsPendingEvaluate() {
+        let center = NotificationCenter()
+        let monitor = NetworkMonitor(notificationCenter: center, wakeSettleInterval: 0.2)
+        let evaluated = expectation(description: "no evaluate while asleep")
+        evaluated.isInverted = true
+        monitor.onChange = { evaluated.fulfill() }
+        monitor.observeSleepWake()
+
+        center.post(name: NSWorkspace.didWakeNotification, object: nil)
+        center.post(name: NSWorkspace.willSleepNotification, object: nil)
+
+        wait(for: [evaluated], timeout: 0.6)
+    }
+
+    /// Wake → sleep → wake: only the last wake evaluates, once.
+    func test_wakeSleepWake_evaluatesOnce() {
+        let center = NotificationCenter()
+        let monitor = NetworkMonitor(notificationCenter: center, wakeSettleInterval: 0.2)
+        var evaluations = 0
+        monitor.onChange = { evaluations += 1 }
+        monitor.observeSleepWake()
+
+        center.post(name: NSWorkspace.didWakeNotification, object: nil)
+        center.post(name: NSWorkspace.willSleepNotification, object: nil)
+        center.post(name: NSWorkspace.didWakeNotification, object: nil)
+
+        RunLoop.main.run(until: Date().addingTimeInterval(0.6))
+        XCTAssertEqual(evaluations, 1)
+    }
+}
