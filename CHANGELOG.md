@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.3] - 2026-11-24
+
+### Fixed
+- Sleeping again within a few seconds of waking no longer causes a spurious Wi-Fi toggle and banner after the next wake. (#35, thanks @amaury-d)
+- If macOS refuses to turn Wi-Fi off after you plug in the LAN, LanGuard no longer says it did: no "Wi-Fi off" banner, and the menu shows "Couldn't turn Wi-Fi off". (#36, thanks @amaury-d)
+- If Wi-Fi can't be turned back on after you unplug the LAN, a "Couldn't turn Wi-Fi on" banner tells you, instead of a "Wi-Fi on" banner.
+
 ## [1.4.2] - 2026-11-15
 
 ### Fixed
