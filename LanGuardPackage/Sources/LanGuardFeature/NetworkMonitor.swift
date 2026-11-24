@@ -21,9 +21,17 @@ public final class NetworkMonitor {
     /// powers its Ethernet down on sleep and back up on wake, which otherwise
     /// looks like an unplug→replug and spams toggles/notifications.
     private var suspended = false
-    private let wakeSettleInterval: TimeInterval = 4.0
+    private let wakeSettleInterval: TimeInterval
+    /// The post-wake settle; cancelled when the Mac sleeps again before it fires.
+    private var pendingWakeSettle: DispatchWorkItem?
+    /// Source of sleep/wake notifications (injected by tests).
+    private let notificationCenter: NotificationCenter
 
-    public init() {}
+    public init(notificationCenter: NotificationCenter = NSWorkspace.shared.notificationCenter,
+                wakeSettleInterval: TimeInterval = 4.0) {
+        self.notificationCenter = notificationCenter
+        self.wakeSettleInterval = wakeSettleInterval
+    }
 
     public func start() {
         var ctx = SCDynamicStoreContext(
@@ -55,28 +63,38 @@ public final class NetworkMonitor {
             CFRunLoopAddSource(CFRunLoopGetMain(), src, .commonModes)
         }
 
+        observeSleepWake()
+    }
+
+    /// Split from `start()` so tests can drive sleep/wake without an SCDynamicStore.
+    func observeSleepWake() {
         // Sleep/wake handling. A docked Mac's Ethernet link drops on sleep and
         // returns on wake; acting on those fires spurious toggles + notifications.
         // So: ignore link changes while asleep, and after wake wait for the
         // network to settle, then evaluate once. A genuine undock-while-asleep is
         // still caught — the settled post-wake state reads as a real edge.
-        let nc = NSWorkspace.shared.notificationCenter
+        let nc = notificationCenter
         nc.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { [weak self] _ in
             Log.write("willSleep → suspend (ignore link changes while asleep)")
             self?.suspended = true
             self?.pendingEvaluate?.cancel()
+            // A wake that hasn't settled yet must not resume us mid-churn after the next wake.
+            self?.pendingWakeSettle?.cancel()
         }
         nc.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
             guard let self = self else { return }
             Log.write("didWake → settle \(self.wakeSettleInterval)s, then evaluate once")
             // Stay suspended through the post-wake network churn, then resume + evaluate once.
-            DispatchQueue.main.asyncAfter(deadline: .now() + self.wakeSettleInterval) { [weak self] in
+            self.pendingWakeSettle?.cancel()
+            let work = DispatchWorkItem { [weak self] in
                 guard let self = self else { return }
                 Log.write("wake settle done → resume + evaluate")
                 self.suspended = false
                 self.pendingEvaluate?.cancel()
                 self.onChange()
             }
+            self.pendingWakeSettle = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + self.wakeSettleInterval, execute: work)
         }
     }
 
